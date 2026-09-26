@@ -1,0 +1,30 @@
+{
+  "name": "sakura-blog",
+  "version": "0.1.0",
+  "description": "黑白配色的个人博客：文章 + 动态，带标签、搜索、音乐播放器与写作热力图。",
+  "main": "index.js",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "check": "astro check",
+    "article": "node new-article.mjs",
+    "thought": "node new-thought.mjs",
+    "tag": "node new-tag.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@astrojs/react": "^7.0.0",
+    "@astrojs/rss": "^4.0.19",
+    "astro": "^7.3.5",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "simple-icons": "^16.32.0"
+  }
+}

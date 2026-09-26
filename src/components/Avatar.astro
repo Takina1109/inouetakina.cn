@@ -1,0 +1,16 @@
+---
+import { site } from '@/data/site';
+---
+
+<div class="avatar-block">
+  <a class="avatar" href="/about/" aria-label={`${site.author} 的自我介绍`}>
+    <span class="avatar__ring" aria-hidden="true"></span>
+    <img class="avatar__img" src={site.avatar} alt={`${site.author} 的头像`} width="132" height="132" />
+    <span class="avatar__status" aria-hidden="true"></span>
+  </a>
+
+  <div>
+    <a class="brand__name" href="/" title="返回主页">{site.title}</a>
+    <p class="brand__tagline">{site.tagline}</p>
+  </div>
+</div>

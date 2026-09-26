@@ -1,0 +1,63 @@
+---
+/**
+ * 文章列表（只显示 type: tech）
+ * 底部导航「文章」按钮指向这里。
+ */
+import PostCard from '@/components/PostCard.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getPosts, getTagCounts } from '@/lib/posts';
+
+const posts = await getPosts();
+const articles = posts.filter((p) => p.data.type === 'tech');
+
+/* 只统计文章里出现过的标签 */
+const tagCounts = new Map<string, number>();
+for (const post of articles) {
+  for (const tag of post.data.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+}
+const tags = [...tagCounts.entries()]
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 12)
+  .map(([tag]) => tag);
+---
+
+<BaseLayout title="文章" description="技术写作与踩坑记录">
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">Articles</p>
+      <h1 class="page-head__title">文章</h1>
+      <p class="page-head__desc">
+        技术写作、踩坑记录、源码笔记 —— 共 {articles.length} 篇。日常的碎碎念在
+        <a href="/thoughts/">动态</a>里。
+      </p>
+    </header>
+  </Fragment>
+
+  {
+    tags.length > 0 && (
+      <nav class="filter-bar" aria-label="文章标签">
+        {tags.map((tag) => (
+          <a class="chip" href={`/tags/${encodeURIComponent(tag)}/`}>
+            #{tag}
+          </a>
+        ))}
+      </nav>
+    )
+  }
+
+  {
+    articles.length > 0 ? (
+      <ul class="post-list">
+        {articles.map((post) => (
+          <li>
+            <PostCard post={post} />
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p class="empty-state">
+        还没有文章。新建时把 frontmatter 里的 <code>type</code> 写成 <code>tech</code> 就会出现在这里 ✎
+      </p>
+    )
+  }
+</BaseLayout>

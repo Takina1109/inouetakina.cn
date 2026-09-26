@@ -1,0 +1,31 @@
+---
+import { formatDate, postUrl, type Post } from '@/lib/posts';
+import TagList from './TagList.astro';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { data } = post;
+---
+
+<li class="timeline__item">
+  <span class="timeline__rail" aria-hidden="true">
+    <i class="timeline__dot"></i>
+  </span>
+
+  <article class="timeline__body">
+    <p class="timeline__date">
+      <time datetime={formatDate(data.date)}>{formatDate(data.date)}</time>
+    </p>
+
+    <h3 class="timeline__title">
+      <a href={postUrl(post)}>{data.title}</a>
+    </h3>
+
+    {data.description && <p class="timeline__desc">{data.description}</p>}
+
+    {data.tags.length > 0 && <TagList tags={data.tags} limit={4} />}
+  </article>
+</li>

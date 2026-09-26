@@ -1,0 +1,132 @@
+---
+import '@/styles/global.css';
+import { site } from '@/data/site';
+import { buildHeatmap, buildSearchIndex, buildStats, getPosts } from '@/lib/posts';
+import SearchDialog from '@/components/SearchDialog.tsx';
+import Sidebar from '@/components/Sidebar.astro';
+
+interface Props {
+  /** 页面标题，会自动拼接站点名 */
+  title?: string;
+  description?: string;
+}
+
+const { title, description = site.description } = Astro.props;
+const pageTitle = title ? `${title} · ${site.title}` : `${site.title} · 随想与技术笔记`;
+
+/* 全站共享数据：内容列表 / 搜索索引 / 热力图 / 站点统计 */
+const posts = await getPosts();
+const heatmap = buildHeatmap(posts);
+const searchIndex = buildSearchIndex(posts);
+const stats = buildStats(posts);
+
+/* 当前路径，用来给导航按钮打高亮 */
+const path = Astro.url.pathname;
+const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+
+/* 顶部主导航：主页 / 文章 / 动态 / 标签 */
+const navIcons = {
+  home: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
+  post: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-5 14H7v-2h7zm3-4H7v-2h10zm0-4H7V7h10z',
+  thought: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z',
+  tag: 'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7A1.5 1.5 0 1 1 7 5.5 1.5 1.5 0 0 1 5.5 7z',
+} as const;
+
+const navItems = [
+  { href: '/', label: '主页', icon: navIcons.home },
+  { href: '/posts/', label: '文章', icon: navIcons.post },
+  { href: '/thoughts/', label: '动态', icon: navIcons.thought },
+  { href: '/tags/', label: '标签', icon: navIcons.tag },
+];
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title={site.title} href="/rss.xml" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta name="theme-color" content="#0a0a0a" />
+  </head>
+
+  <body>
+    <!-- 落樱装饰 -->
+    <div class="petals" aria-hidden="true">
+      {
+        Array.from({ length: 9 }).map((_, i) => (
+          <span
+            style={`left:${(i * 11 + 4) % 100}%; animation-duration:${13 + (i % 5) * 3}s; animation-delay:${i * 1.6}s; width:${
+              8 + (i % 3) * 3
+            }px; height:${8 + (i % 3) * 3}px;`}
+          />
+        ))
+      }
+    </div>
+
+    <div class="app">
+      <!-- 顶栏：横跨整页宽度，滚动时吸附在顶部 -->
+      <div class="topbar">
+        <nav class="topnav" aria-label="主导航">
+          {
+            navItems.map((item) => (
+              <a
+                class="nav-btn"
+                href={item.href}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+                title={item.label}
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d={item.icon} />
+                </svg>
+                <span class="nav-btn__text">{item.label}</span>
+              </a>
+            ))
+          }
+        </nav>
+
+        <span class="topbar__spacer"></span>
+
+        <SearchDialog client:load items={searchIndex} />
+
+        <a class="icon-btn" href="/rss.xml" title="RSS 订阅" aria-label="RSS 订阅">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M5.5 18.5a2 2 0 1 1-2-2 2 2 0 0 1 2 2zM3.5 10.4v3a7.1 7.1 0 0 1 7.1 7.1h3a10.1 10.1 0 0 0-10.1-10.1zM3.5 3.5v3A13.5 13.5 0 0 1 17 20h3A16.5 16.5 0 0 0 3.5 3.5z" />
+          </svg>
+        </a>
+      </div>
+
+      <!--
+        大标题区：同样用 grid-column: 1 / -1 横跨整页，
+        所以标题会比正文更靠左（向左延伸），同时把左侧边栏整体推到下面。
+        页面用 <Fragment slot="hero"> 传入自己的标题。
+      -->
+      {
+        Astro.slots.has('hero') && (
+          <div class="page-hero">
+            <slot name="hero" />
+          </div>
+        )
+      }
+
+      <Sidebar heatmap={heatmap} stats={stats} />
+
+      <main class="main">
+        <slot />
+
+        <footer class="site-footer">
+          <span>© {site.since}–{new Date().getFullYear()} {site.author}</span>
+          <span>用 Astro 构建 · 内容用 Markdown 书写</span>
+          <a href="/rss.xml">RSS</a>
+          <a href="/tags/">全部标签</a>
+        </footer>
+      </main>
+    </div>
+  </body>
+</html>

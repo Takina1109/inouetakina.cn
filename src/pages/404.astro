@@ -1,0 +1,19 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="页面走丢了" description="404">
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">404</p>
+      <h1 class="page-head__title">这页好像不见了 ( ´•̥̥̥ω•̥̥̥` )</h1>
+      <p class="page-head__desc">可能链接写错了，也可能是我还没写。</p>
+    </header>
+  </Fragment>
+
+  <p>
+    <a class="chip" href="/">回到主页</a>
+    <a class="chip" href="/posts/">看看文章</a>
+    <a class="chip" href="/tags/">逛逛标签</a>
+  </p>
+</BaseLayout>

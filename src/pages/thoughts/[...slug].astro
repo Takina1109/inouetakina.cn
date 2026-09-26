@@ -1,0 +1,22 @@
+---
+/**
+ * 动态详情页：/thoughts/<文件名>/
+ * 和 /posts/<文件名>/ 共用 src/layouts/PostLayout.astro
+ */
+import PostLayout from '@/layouts/PostLayout.astro';
+import { getPosts } from '@/lib/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts
+    .filter((post) => post.data.type === 'thought')
+    .map((post) => ({
+      params: { slug: post.id },
+      props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+---
+
+<PostLayout post={post} />

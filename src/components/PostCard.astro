@@ -1,0 +1,44 @@
+---
+import { formatDate, postUrl, readingTime, type Post } from '@/lib/posts';
+import TagList from './TagList.astro';
+import TypeBadge from './TypeBadge.astro';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { data } = post;
+const url = postUrl(post);
+---
+
+<article class="card post-card">
+  <div class="post-card__head">
+    <TypeBadge type={data.type} />
+    {data.pinned && <span class="post-card__pin">📌 置顶</span>}
+  </div>
+
+  <h3 class="post-card__title">
+    <a class="post-card__link" href={url}>{data.title}</a>
+  </h3>
+
+  {data.description && <p class="post-card__desc">{data.description}</p>}
+
+  <div class="post-card__meta">
+    <span class="post-card__meta-item">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm12 8v10H5V10z" />
+      </svg>
+      <time datetime={formatDate(data.date)}>{formatDate(data.date)}</time>
+    </span>
+
+    <span class="post-card__meta-item">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6zm1-2v9l7 4-1 1.7-8-4.7V2z" />
+      </svg>
+      {readingTime(post.body)}
+    </span>
+
+    {data.tags.length > 0 && <TagList tags={data.tags} limit={4} />}
+  </div>
+</article>

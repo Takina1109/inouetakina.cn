@@ -1,0 +1,22 @@
+---
+/**
+ * 技术文章详情页：/posts/<文件名>/
+ * 渲染逻辑统一放在 src/layouts/PostLayout.astro，动态共用同一套。
+ */
+import PostLayout from '@/layouts/PostLayout.astro';
+import { getPosts, type Post } from '@/lib/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return posts
+    .filter((post) => post.data.type === 'tech')
+    .map((post: Post) => ({
+      params: { slug: post.id },
+      props: { post },
+    }));
+}
+
+const { post } = Astro.props;
+---
+
+<PostLayout post={post} />

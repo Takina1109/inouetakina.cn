@@ -1,0 +1,68 @@
+---
+import PostCard from '@/components/PostCard.astro';
+import ThoughtItem from '@/components/ThoughtItem.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { filterByTag, getPosts, getTagCounts } from '@/lib/posts';
+
+export async function getStaticPaths() {
+  const posts = await getPosts();
+  return getTagCounts(posts).map(({ tag, count }) => ({
+    params: { tag },
+    props: { tag, count },
+  }));
+}
+
+const { tag, count } = Astro.props;
+const posts = await getPosts();
+const tagged = filterByTag(posts, tag);
+
+/* 同一个标签下，文章和动态分开列 */
+const articles = tagged.filter((p) => p.data.type === 'tech');
+const thoughts = tagged.filter((p) => p.data.type === 'thought');
+---
+
+<BaseLayout title={`#${tag}`} description={`标签「${tag}」下的全部内容`}>
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">Tag</p>
+      <h1 class="page-head__title">#{tag}</h1>
+      <p class="page-head__desc">
+        共 {count} 条 · <a href="/tags/">查看全部标签</a>
+      </p>
+    </header>
+  </Fragment>
+
+  {
+    articles.length > 0 && (
+      <section class="block">
+        <div class="block__head">
+          <h2 class="block__title">文章<span class="block__count">{articles.length}</span></h2>
+          <span class="block__line" />
+        </div>
+        <ul class="post-list">
+          {articles.map((post) => (
+            <li>
+              <PostCard post={post} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    thoughts.length > 0 && (
+      <section class="block">
+        <div class="block__head">
+          <h2 class="block__title">动态<span class="block__count">{thoughts.length}</span></h2>
+          <span class="block__line" />
+        </div>
+        <ul class="timeline">
+          {thoughts.map((post) => (
+            <ThoughtItem post={post} />
+          ))}
+        </ul>
+      </section>
+    )
+  }
+</BaseLayout>

@@ -1,0 +1,837 @@
+使用说明
+====================================================================
+
+这份文档只讲一件事：【想改什么，就打开哪个文件、改哪一句】。
+技术选型和整体架构看 README.md，这里全部是操作步骤。
+
+目录
+--------------------------------------------------------------------
+  0. 三分钟跑起来
+  1. 速查表：想改什么 → 去哪里改
+  2. 换成你自己的信息（名字 / 头像 / 社交链接 / 自我介绍 / 站点信息）
+  3. 上传文章和动态
+  4. 音乐播放器（在线歌单 / 本地文件）
+  5. 改配色和布局
+  6. 现在的状态与待办
+  7. 部署上线
+  8. 常见问题
+
+
+====================================================================
+0. 三分钟跑起来
+====================================================================
+
+打开终端，进入项目文件夹，依次执行：
+
+  npm install      安装依赖（第一次才需要，约 1 分钟）
+
+  npm run dev      启动本地预览
+
+然后浏览器打开 http://localhost:4321 就能看到网站。
+改任何文件保存后，页面会自动刷新。
+
+写完了要发布时执行：
+
+  npm run build    生成静态网站，产物在 dist/ 文件夹里
+
+按 Ctrl + C 可以停掉 npm run dev。
+
+注意：底部那个黑色的 Astro 调试工具条只在 npm run dev 时出现，
+正式构建出来的网站不会有，不用管它。
+
+
+====================================================================
+1. 速查表：想改什么 → 去哪里改
+====================================================================
+
+  想改的东西                     打开这个文件                  改哪一句
+  ------------------------------------------------------------------
+  网站名字                        src/data/site.ts              title
+  头像                            src/data/site.ts              avatar
+  头像下面的签名                  src/data/site.ts              tagline
+  你的名字（页脚）                src/data/site.ts              author
+  网站简介（搜索引擎用）          src/data/site.ts              description
+  页脚版权年份                    src/data/site.ts              since
+  建站时间（侧边栏那张表）        src/data/site.ts              launched
+  GitHub / B站 / 网易云链接       src/data/site.ts              socials
+  ★ 网易云歌单 ID                src/data/site.ts              meting.id
+  切回本地音频文件                src/data/site.ts              musicMode
+  歌单的播放顺序 / 循环方式       src/data/site.ts              meting.order / loop
+  自动播放 / 随机 / 音量          src/data/site.ts              playerConfig（local 用）
+
+  自我介绍                        src/content/about/index.md    直接改正文
+  文章（技术类）                  src/content/posts/xxx.md      ——
+  动态（随想类）                  src/content/posts/xxx.md      ——
+  标签                            跑 npm run tag               加 / 删 / 看统计
+
+  侧边栏宽度                      src/styles/global.css         --sidebar-w
+  侧边栏整体下移多少              src/styles/global.css         --avatar-offset
+  各种颜色                        src/styles/global.css         :root 里的颜色变量
+  顶部四个按钮                    src/layouts/BaseLayout.astro  navItems
+
+  文章模板                        new-article.mjs               buildTemplate
+  动态模板                        new-thought.mjs               buildTemplate
+  标签写法（分隔符等）            new-tag.mjs                   formatTags
+  APlayer 外观覆盖                src/styles/global.css        搜「APlayer」
+  首次交互后播放的逻辑            src/components/MetingPlayer.astro  底部 script
+
+  代码块高亮颜色                  shiki-mono.mjs                palette
+  部署域名                        astro.config.mjs              site
+
+
+====================================================================
+2. 换成你自己的信息
+====================================================================
+
+绝大多数个人设置都集中在同一个文件里：
+
+    src/data/site.ts
+
+用编辑器打开它，会看到这样一段（约在第 38 行开始）：
+
+    export const site = {
+      title: 'TAKINA',                  <-- 改这里：网站名字
+      description: '记录随时的想法…',   <-- 改这里：网站简介
+      author: '夜羽',                   <-- 改这里：你的名字
+      avatar: '/avatar.svg',            <-- 改这里：头像文件
+      tagline: '热爱二次元与前端的…',   <-- 改这里：头像下方的签名
+      url: 'https://example.com',       <-- 改这里：你的域名
+      launched: '2026-09-27',           <-- 改这里：建站日期
+      since: 2026,                      <-- 改这里：页脚版权起始年
+      pageSize: 0,
+    } as const;
+
+改的时候注意：引号别删，中英文标点别混用，每行末尾要有逗号。
+
+其中 launched（建站日期）会显示在侧边栏最下面那张「站点信息」表里。
+格式必须写成 年-月-日，比如 '2026-09-27'。网站会自动算出「已运行
+N 天」，所以设好之后就不需要再动了。
+
+
+--- 2.1 换头像 ------------------------------------------------------
+
+头像文件放在 public/ 文件夹里。public 里的文件会被原样复制到网站
+根目录，所以 public/avatar.svg 对应的地址就是 /avatar.svg。
+
+步骤：
+  1) 把你的头像图片（建议正方形，比如 500×500）复制到 public/
+     文件夹里，例如 public/my-avatar.png
+
+  2) 打开 src/data/site.ts，把这一行：
+
+         avatar: '/avatar.svg',
+
+     改成：
+
+         avatar: '/my-avatar.png',
+
+  3) 保存。头像会自动裁成圆形，外面那圈缓慢旋转的光环是自动加的。
+
+想换成 JPG 或 WebP 也可以，只要扩展名和文件名对得上就行。
+
+
+--- 2.2 改社交链接（GitHub / 哔哩哔哩 / 网易云音乐）----------------
+
+打开 src/data/site.ts，找到 socials 这一段（约在第 60 行）：
+
+    export const socials: SocialLink[] = [
+      {
+        label: 'GitHub',
+        url: 'https://github.com/your-name',        <-- 改成你的主页
+        icon: 'github',
+      },
+      {
+        label: '哔哩哔哩',
+        url: 'https://space.bilibili.com/your-uid', <-- 改成你的 UID
+        icon: 'bilibili',
+      },
+      {
+        label: '网易云音乐',
+        url: 'https://music.163.com/#/user/home?id=your-uid',  <-- 改 UID
+        icon: 'neteasecloudmusic',
+      },
+    ];
+
+  - label 是鼠标悬停时显示的文字，可以随便改
+  - url 是点击后跳转的地址
+  - icon 是图标名字，不要乱改（可用名字见下面）
+
+icon 支持这些：
+    github / bilibili / neteasecloudmusic / x / steam / zhihu /
+    gitee / qq / wechat / xiaohongshu / discord / rss
+
+想加第四个链接，照抄一整块 { ... }, 粘贴在后面即可。
+想去掉某一个，把它那一整块 { 到 }, 删掉就行。
+
+网站现在是黑白配色，所以图标默认不显示品牌色（悬停时变成白色）。
+如果想让某个图标恢复原来的品牌色，在那一块里加一行：
+
+        color: '#00aeec',     （这是 B 站蓝，可以换成任何颜色）
+
+
+--- 2.3 改自我介绍 -------------------------------------------------
+
+【注意】侧边栏最下面那个栏目现在是「站点信息」（建站时间 / 文章总数 /
+总字数 / 最后更新），不再显示自我介绍。但自我介绍的内容和 /about/
+页面都还在，点侧边栏的圆形头像就能打开。
+
+打开：
+
+    src/content/about/index.md
+
+里面就是一段普通的 Markdown，随便改。支持标题、列表、加粗、链接、
+引用（> 开头的行）等等。
+
+它显示在这两个地方：
+  - 点侧边栏的圆形头像 → 进入 /about/ 页面（完整版）
+  - 顶部导航里可以自己加一个「关于」按钮指向 /about/（见 5.3）
+
+开头三行是配置，别删：
+
+    ---
+    title: 自我介绍
+    updated: 2026-09-27      <-- 改了内容后把日期更新一下
+    ---
+
+
+--- 2.4 侧边栏最下面的「站点信息」表 -------------------------------
+
+侧边栏最下面那张表会自动统计，不需要手动维护：
+
+    建站时间      取自 src/data/site.ts 的 launched
+    文章总数      当前所有内容的篇数，并拆成「文章 N · 动态 M」
+    总字数        所有正文的字数（中文按字、英文按词，代码块也算）
+    最后更新      所有内容里最新的那个日期
+
+也就是说：你新写一篇文章、改一次 frontmatter 的日期，这张表会自动
+跟着变，不用管它。
+
+想调整显示顺序或加一行（比如「标签总数」），打开：
+
+    src/components/SiteStats.astro
+
+里面的统计数字是从 src/lib/posts.ts 的 buildStats() 来的，
+想加新指标就在那个函数里加一个字段，再在这里加一行 <div class="stats__row">。
+
+【想恢复侧边栏里的自我介绍卡片】
+组件还在，只是没被用上。打开 src/components/Sidebar.astro：
+
+  1) 在最上面的 import 区加一行
+         import IntroCard from './IntroCard.astro';
+
+  2) 在最下面那个 <section> 里，把
+         <SiteStats stats={stats} />
+     换成
+         <IntroCard />
+
+就恢复了。
+
+
+====================================================================
+3. 上传文章和动态
+====================================================================
+
+文章和动态共用同一套机制，都是「一个 .md 文件 = 一条内容」，
+文件都放在：
+
+    src/content/posts/
+
+唯一的区别是 frontmatter 里的 type 字段：
+
+    type: tech        →  文章，出现在「文章」分区，网址是 /posts/文件名/
+    type: thought     →  动态，出现在「动态」分区，网址是 /thoughts/文件名/
+
+两者在页面上完全分开：
+  - 「文章」用卡片列表展示
+  - 「动态」用时间轴展示
+
+
+--- 3.1 用脚本新建（推荐）------------------------------------------
+
+项目根目录下有两个脚本，一个管文章、一个管动态：
+
+    新建文章：npm run article       （文件：new-article.mjs）
+    新建动态：npm run thought       （文件：new-thought.mjs）
+
+（还有一个管标签的 npm run tag，见 3.6）
+
+执行之后按提示依次输入：标题 → 标签 → 摘要，就会在
+src/content/posts/ 里生成好文件，并打印出本地预览网址。
+
+也可以一行命令写全，就不会再提问：
+
+    npm run article -- --title "用 Astro 搭博客" --slug astro-blog --tags "Astro,前端" --description "踩坑记录"
+
+    npm run thought -- --title "买了个新键盘" --tags "日常,外设"
+
+两个脚本的参数完全一样：
+
+    --title       标题（必填。不写就会问你）
+    --slug        文件名 / 网址最后一段。不写就根据标题自动生成
+    --tags        标签，逗号分隔
+    --description 摘要
+    --publish     直接发布。不加的话默认是草稿（draft: true）
+
+【默认是草稿】刚建出来的文件里写着 `draft: true`，只有你本地 npm run dev
+能看到，正式构建时会跳过。写完要发布时，把它改成 `draft: false`。
+
+【一定要保留 draft: 这几个字】常见的错误写法是只留一个 false：
+
+    正确：draft: false        （键名 + 冒号 + 值）
+    错误：false               （只写一个值，YAML 会直接报错，整个网站
+                               都构建不出来，不只是这一篇不显示）
+
+【想改模板】直接用编辑器打开 new-article.mjs 或 new-thought.mjs，
+找到 buildTemplate 那个函数，里面的数组就是新文件的初始内容，
+想加什么默认段落、默认标签都可以自己改。
+
+方式二：手动新建
+
+直接在 src/content/posts/ 文件夹里新建一个 xxx.md 文件
+（xxx 就是网址的最后一段），然后把下面的模板抄进去：
+
+    ---
+    title: 文章标题
+    description: 一句话摘要，会显示在卡片上
+    date: 2026-09-27
+    type: tech
+    tags: [前端, 笔记]
+    draft: false
+    pinned: false
+    ---
+
+    正文从这里开始，用 Markdown 写。
+
+    ## 二级标题
+
+    - 列表项
+    - 列表项
+
+    ```js
+    console.log('代码块会自动高亮');
+    ```
+
+
+--- 3.2 frontmatter 每个字段的意思 ----------------------------------
+
+上面 --- 和 --- 之间的部分叫 frontmatter，每个字段：
+
+    title        必填。标题。整条内容靠它显示，留空会报错
+    date         必填。日期，写成 2026-09-27 这样（用 - 分隔最好）
+    description  摘要。可以不写，也可以留空 —— 留空就不显示那一行，不会出错
+    type         选填。tech = 文章，thought = 动态。不写就按 thought 算
+    tags         选填。推荐写成 [标签1, 标签2] 这种方括号形式
+    draft        选填。不写就是 false（已发布）。改成 true 的话只有本地
+                 npm run dev 能看到，正式构建时会被自动跳过。
+                 【注意】写的时候 draft: 这个键名要保留，不能只写一个 true 或 false
+    pinned       选填。写 true 会排在该分区最前面。一般不用写
+    cover        选填。封面图，暂时没用到
+
+【只有 title 和 date 是必填的】其它字段不写、或者「键名: 后面留空」都可以，
+网站会用默认值处理。
+
+【重要】下面这几种写法都会导致构建直接报错，而且报错信息会明确告诉你
+是哪个文件的哪个字段，不会静悄悄地出错：
+
+    title:                    标题留空
+    date:                     日期留空
+    draft: true  →  false     把键名丢了，只留一个值
+
+【重要】字段名不要写错。写成 tag: / titel: 这种，会被当成「没写这个字段」，
+那条内容就按默认值渲染了。
+
+【标签怎么写】推荐用方括号，即使只有一个标签：
+
+    tags: [日常]            推荐
+    tags: [日常, 前端]      推荐
+
+忘了写方括号也能跑，会自动按逗号 / 顿号拆开，但不推荐：
+
+    tags: 日常              → 变成 ['日常']
+    tags: 日常、前端         → 变成 ['日常', '前端']
+
+
+--- 3.3 关于标签 ---------------------------------------------------
+
+标签是自动汇总的，不需要去别的地方登记。你只要在文章里写了
+tags: [前端, CSS]，网站就会自动：
+  - 在 /tags/ 页面生成一个「#前端」入口
+  - 生成 /tags/前端/ 这个页面，列出所有带这个标签的内容
+  - 在顶部「标签」按钮和首页的「常用标签」里显示它
+
+同一个标签在文章和动态里都用了也没关系，那个标签页会把两者分开列。
+
+【重要】一个标签只有被至少一篇内容用到才会出现。如果某个标签下的内容
+全被删了，那个标签和它的标签页也会自动消失，这是正常的。
+
+
+--- 3.4 正文里怎么插图 ---------------------------------------------
+
+把图片放进 public/ 文件夹（比如 public/pic1.png），然后在正文里写：
+
+    ![图片说明](/pic1.png)
+
+图片多了建议建个子文件夹：public/images/，然后写
+![说明](/images/pic1.png)
+
+
+--- 3.5 写作流程建议 -----------------------------------------------
+
+  1. 建文件：文章用 npm run article，动态用 npm run thought
+     （默认 draft: true，不会被发布）
+  2. 在 src/content/posts/ 里打开它写正文，npm run dev 随时预览
+  3. 写完后把 draft: true 改成 draft: false（保留 draft: 这几个字，
+     不要只留一个 false，否则 frontmatter 会变成非法 YAML，整个构建都会失败）
+  4. 需要的话用 npm run tag 补标签
+  5. npm run build 构建并部署
+
+
+--- 3.6 用脚本管理标签 ---------------------------------------------
+
+项目根目录下的第三个脚本（文件：new-tag.mjs）用来给已有的内容改标签，
+省得每次打开 .md 手动改 tags 那一行。
+
+先看看现在有哪些标签、哪些内容：
+
+    npm run tag -- --list
+
+输出长这样：
+
+    🏷 已有标签
+       · 前端  (5)
+       · 日常  (4)
+    📄 可编辑的内容（src/content/posts/）
+       1) [文章] 用 Astro 内容集合管理博客文章   —   Astro, 前端, 静态站点
+       2) [动态] 开站啦：这里会放些什么           —   公告, 日常
+
+交互式地改（直接跑，跟着提示选）：
+
+    npm run tag
+
+它会依次问你：给哪些内容打标签（填序号，多个用逗号分隔，回车=全部）、
+要加什么标签。标签名可以直接写全新的，写出来就自动存在了。
+
+也可以一行命令写全（--post 填文件名，不带 .md）：
+
+    npm run tag -- --post 用-Astro-搭博客 --tags "前端,笔记"
+
+参数：
+    --list          只列出标签和内容，不做任何修改
+    --post <名称>   文件名（不带 .md），多个用逗号分隔
+    --tags <标签>   要添加的标签，逗号分隔
+    --remove        把 --tags 里的标签从文件上删掉，而不是添加
+
+例如把「草稿」这个标签从两篇内容上去掉：
+
+    npm run tag -- --post 文章A,动态B --tags "草稿" --remove
+
+这个脚本只动 frontmatter 里的 tags: 那一行，正文和其它字段不受影响。
+
+
+====================================================================
+4. 音乐播放器
+====================================================================
+
+播放器有两套方案，切换开关在 src/data/site.ts：
+
+    export const musicMode: MusicMode = 'meting';   // 默认：在线歌单
+    //                                 'local'     // 本地音频文件
+
+  'meting' —— APlayer + MetingJS，直接解析你的网易云歌单。
+              音频不经过本站，也不存在把音乐文件再分发出去的问题。
+              默认用这个，见 4.1。
+
+  'local'  —— 播放 public/music/ 里的本地音频文件，见 4.3。
+              适合有明确授权、或自己创作的音乐。
+
+
+--- 4.1 换成你自己的网易云歌单（常用）------------------------------
+
+你只需要改一个数字：歌单 ID。
+
+怎么拿到歌单 ID：
+  1. 浏览器打开 https://music.163.com，登录
+  2. 进入「我的音乐 → 我创建的歌单」，点开你要用的那个歌单
+  3. 看地址栏，形如：
+
+         https://music.163.com/#/playlist?id=1234567890
+                                         ^^^^^^^^^^ 这串数字就是 ID
+
+  4. 打开 src/data/site.ts，找到：
+
+         export const meting = {
+           ...
+           id: '3778678',        <-- 把引号里的数字换成你的
+           ...
+         };
+
+     换成你的之后保存，本地 npm run dev 刷新就能看到。
+
+注意：
+  - 歌单必须是「公开」的，私密歌单接口拿不到
+  - 换成公开的别人的歌单也可以
+  - 现在这个 3778678 是「网易云飙升榜」，只是占位示例，记得换掉
+  - 网易云里 VIP / 付费歌曲只能拿到 30 秒试听，这是接口的限制，
+    不是代码问题；免费歌曲是完整的
+
+改完不用动别的地方。想改播放顺序、循环方式这些，看 4.2。
+
+
+--- 4.2 播放器行为和其它设置 ---------------------------------------
+
+同一段 export const meting = { ... } 里，每一项都有中文注释：
+
+    server       音乐源：netease(网易云) / tencent(QQ音乐) / kugou / baidu
+    type         解析类型：playlist(歌单) / album(专辑) / artist(歌手) / song(单曲)
+    id           ★ 歌单 ID（见 4.1）
+    api          Meting API 地址（见下面的【重要】）
+    order        播放顺序：random = 随机（默认，符合需求）/ list = 顺序
+    loop         循环：all 列表循环 / one 单曲循环 / none 播完就停
+    lrcType      歌词类型，固定 3，不要改
+    listFolded   播放列表默认折叠（true），点播放器右下角的列表图标展开
+    listMaxHeight 播放列表展开后的最大高度
+    theme        播放器强调色，本站黑白配色所以是浅灰
+
+【播放逻辑】播放器关掉了自动播放，改为：访客在页面上的第一次点击 / 按键 /
+触摸时才开始播。这样既不会撞上浏览器的「禁止自动播放」拦截（控制台不会
+报错），又能做到「一进来点一下就有歌」。这段逻辑写在
+src/components/MetingPlayer.astro 底部的 <script is:inline> 里。
+
+【重要】关于 api 这一项：
+MetingJS 自己不会解析歌单，它需要一个「Meting API」服务，把歌单 ID 换成
+可播放的音频地址。配置里默认用的是一个第三方公共实例：
+
+    api: 'https://api.injahow.cn/meting/?server=:server&type=:type&id=:id'
+
+公共实例随时可能挂掉、被限流或直接关停（MetingJS 官方那个默认地址
+api.i-meto.com 现在就是 403，所以这里已经换掉了）。挂掉时的表现是：
+播放器位置显示一句「歌单加载失败」的提示，不会白屏也不会报错。
+
+长期使用建议自己部署一个（免费，十几分钟）：
+  - https://github.com/injahow/meting-api     Node 版，可一键部署到 Vercel
+  - https://github.com/metowolf/Meting        PHP 版，丢到任意 PHP 空间
+  - https://github.com/xizeyoupan/Meting-API  支持 Vercel / Cloudflare
+
+自部署后把地址换进去，注意 :server / :type / :id 这三个占位符要原样保留：
+
+    api: 'https://你的域名/api?server=:server&type=:type&id=:id'
+
+【想改播放器外观】APlayer 自带的是浅色皮肤，本站把它改成了暗色灰阶。
+覆盖样式在 src/styles/global.css 里搜「APlayer（MetingJS 在线歌单）」。
+
+
+--- 4.3 改用本地音频文件（musicMode = 'local'）--------------------
+
+第一步：把音频文件（mp3 / m4a）复制到 public/music/ 文件夹
+
+第二步：src/data/site.ts 里改成 musicMode = 'local'，然后往下找 playlist：
+
+    export const playlist: Track[] = [
+      {
+        title: '歌名',
+        artist: '歌手',
+        src: '/music/歌名.mp3',        <-- 必须和 public/music/ 里的文件名一致
+        cover: '/music/封面.jpg',      <-- 封面图，可以省略这一行
+      },
+    ];
+
+要点：
+  - src 必须以 /music/ 开头；文件名里有空格也行
+  - 单曲建议压到 5MB 以内，否则打开网站会变慢
+  - 不填 cover、或图片不存在时，会显示一个渐变的方块占位
+
+第三步：播放行为在上面的 playerConfig 里：
+
+    export const playerConfig = {
+      autoplay: true,   // 进页面就尝试播放；被浏览器拦截时会提示点击页面
+      shuffle: true,    // 随机打乱歌单顺序
+      volume: 0.7,      // 初始音量，0 到 1
+      loop: true,       // 一首放完自动下一首
+    };
+
+
+====================================================================
+5. 改配色和布局
+====================================================================
+
+打开：
+
+    src/styles/global.css
+
+文件最上面就是所有可调的参数。
+
+--- 5.1 颜色 -------------------------------------------------------
+
+网站只有一套【暗色 + 黑白灰阶】主题，所有颜色都在文件开头的
+:root { ... } 里，就像这样：
+
+    :root {
+      --bg: #0a0a0a;           页面背景
+      --surface: rgba(255,255,255,0.045);   卡片背景
+      --border: rgba(255,255,255,0.12);     描边
+      --text: #f2f2f2;         正文文字
+      --text-soft: #b3b3b3;    次要文字
+      --text-muted: #7a7a7a;   最弱的文字（日期、计数）
+      --accent: #f2f2f2;       强调色（按钮底色、链接）
+      --on-accent: #0a0a0a;    叠在强调色上的文字色
+      --heat-1 ~ --heat-4;     热力图的四级深浅
+    }
+
+改一个值，全站对应的地方一起变。比如想把强调色改成淡金色，
+把 --accent 改成 #e6c98a、--on-accent 改成 #0a0a0a 即可。
+
+【注意】如果你把 --accent 改成浅色，记得 --on-accent 要保持深色，
+       否则会出现白底白字看不见的情况。
+
+【注意】如果以后想加回亮色主题：把 :root 里这一整段颜色复制一份，
+       改成 html[data-theme='light'] { ... } 并换成浅色值，再加一个
+       切换按钮即可（原来的切换按钮已经删掉了）。
+
+--- 5.2 尺寸与位置 -------------------------------------------------
+
+同一段 :root 里还有这些：
+
+    --sidebar-w: 340px;      左侧边栏宽度
+    --page-max: 1440px;      整个页面最大宽度
+    --avatar-offset: 5rem;   侧边栏内容距顶部（顶栏下方）的距离
+                             想让它和右边正文齐平就改成 0；
+                             想让它更靠下就改成 8rem 之类
+    --radius: 16px;          卡片圆角
+
+--- 5.3 顶部导航按钮 -----------------------------------------------
+
+打开 src/layouts/BaseLayout.astro，找到这一段（约在第 38 行）：
+
+    const navItems = [
+      { href: '/', label: '主页', icon: navIcons.home },
+      { href: '/posts/', label: '文章', icon: navIcons.post },
+      { href: '/thoughts/', label: '动态', icon: navIcons.thought },
+      { href: '/tags/', label: '标签', icon: navIcons.tag },
+    ];
+
+  - 想加一个「关于我」按钮：在方括号里加一行
+        { href: '/about/', label: '关于', icon: navIcons.post },
+  - 想改顺序：调整这几行的先后
+  - 想改文字：改 label 的引号里的内容
+  - icon 可用的值只有 navIcons 里定义的那几个（home / post / thought / tag）；
+    想用新图标，在紧邻上面的 navIcons 里加一行 SVG 路径
+
+窄屏（手机）下按钮只显示图标、不显示文字，这是自动的。
+
+
+====================================================================
+6. 现在的状态与待办
+====================================================================
+
+【内容：已清空】
+
+src/content/posts/ 里原来有 9 篇演示用的文章和动态，现在已经全部删掉，
+只留下一个 .gitkeep 占位文件（它不是内容，删不删都行）。
+
+所以现在打开网站，首页 / /posts/ / /thoughts/ / /tags/ 都会显示空状态
+提示，这是正常的 —— 写下第一篇之后它们就都有内容了。
+
+【内容为空时会看到一条警告】
+
+执行 npm run build 或 npm run dev 时会看到：
+
+    [WARN] [glob-loader] No files found matching "**/*.{md,mdx}" ...
+
+这是正常的，写下第一篇内容后就不会再出现。
+
+【还没换的示例，建议逐个替换】
+
+  - src/data/site.ts 的 meting.id：示例歌单（网易云飙升榜），换成你的
+  - src/data/site.ts 的 meting.api：公共实例，建议自己部署一个
+  - src/data/site.ts 的 site：title / author / tagline / url / launched
+  - src/data/site.ts 的 socials：GitHub / B 站 / 网易云的链接
+  - src/content/about/index.md：示例自我介绍
+  - public/avatar.svg：示例头像（换成自己的图，并改 site.ts 的 avatar）
+  - public/favicon.svg：浏览器标签页上的小图标
+
+
+====================================================================
+7. 部署上线
+====================================================================
+
+第一步：告诉网站你的域名。打开 astro.config.mjs，找到：
+
+    site: 'https://example.com',
+
+改成你自己的域名，比如：
+
+    site: 'https://blog.yourname.com',
+
+这一步影响 RSS 订阅里的链接，别跳过。
+
+第二步：构建
+
+    npm run build
+
+会生成 dist/ 文件夹，里面就是完整的静态网站。
+
+第三步：把 dist/ 传到静态托管平台，任选一个：
+
+  Vercel / Netlify / Cloudflare Pages：
+    - 把项目推到 GitHub，在平台上导入这个仓库
+    - 构建命令填：npm run build
+    - 输出目录填：dist
+    - 之后每次 push 都会自动重新部署
+
+  GitHub Pages：
+    - 本地执行 npm run build
+    - 把 dist/ 里的内容推到 gh-pages 分支
+    - 如果网址带有子路径（比如 user.github.io/blog），还要在
+      astro.config.mjs 里加一行 base: '/blog'
+
+
+====================================================================
+8. 常见问题
+====================================================================
+
+Q: 播放器显示「歌单加载失败」？
+A: 说明所用的 Meting API 暂时不可用（公共实例很不稳定）。
+   临时办法：在 src/data/site.ts 里把 meting.api 换一个实例；
+   长久办法：自己部署一个（见第 4.2 节），地址很稳定。
+
+Q: 为什么有的歌只能听 30 秒？
+A: 那首是网易云的 VIP / 付费歌曲，接口只能拿到试听片段。免费歌曲是完整的。
+
+Q: 打开网站没有自动播放音乐？
+A: 这是故意的。浏览器规定「用户没点过页面就不许自动出声」，所以播放器
+   会等你在页面上第一次点击 / 按键 / 触摸时才开始播。点一下页面就有了。
+   如果你自己点了播放器上的按钮，那就听你的，不会自动抢着播。
+
+Q: 能换成 QQ 音乐 / 酷狗的歌单吗？
+A: 可以。src/data/site.ts 里把 meting.server 改成 tencent / kugou /
+   baidu，再把 id 换成对应的歌单 ID 就行（服务端得支持才行）。
+
+Q: 新写的文章没出现在网站上？
+A: 按顺序检查三个地方：
+   1) frontmatter 里是不是写了 draft: true
+      （是的话要改成 draft: false，注意保留 draft: 这几个字，不要只写一个 false）
+   2) type 写的是 tech 还是 thought —— 决定它出现在哪个分区
+   3) 文件名有没有重复
+
+   如果这三样都没问题、npm run build 也确实能构建出来，那多半是
+   开发服务器（npm run dev）没跟上 —— 见下一个问题的处理办法。
+
+Q: npm run build 成功了，但 npm run dev 预览里就是看不到新内容？
+A: 这是 Astro 开发服务器的老毛病，不是你的内容写错了。
+
+   它的「内容层」在内存里存了一份快照，遇到下面这几种情况会卡住不更新：
+     - 内容 .md 文件被删除（或整个文件夹被清空过）
+     - 新建 .md 文件之后，服务器一直没重启
+     - 中途有过 frontmatter 写坏、构建报错
+
+   处理办法（按顺序试，一般第一步就好了）：
+     1. 在跑 npm run dev 的那个终端里按 Ctrl + C 停掉，重新跑一次
+        npm run dev
+     2. 如果还不行，【先停掉服务器】再去删项目根目录下的 .astro 文件夹
+        （这只是缓存，会自动重新生成），然后重新启动
+        【注意】一定要先停，再删。跑着的时候删，服务器会直接坏掉，
+               日志里会一直刷「collection "posts" does not exist」
+     3. 再不行就 Ctrl + F5 强制刷新浏览器，排除浏览器缓存
+
+   【判断是不是这个问题】跑 npm run build，然后去 dist 文件夹里找对应的
+   .html 文件（比如 dist\thoughts\你的标题\index.html）。如果文件在、
+   内容也对，那就是开发服务器的问题，重启即可，不用改任何代码。
+
+Q: 构建报错了怎么办？
+A: 报错信息会指出是哪个文件、哪个字段（形如 xxx.md:0:0）。
+
+   【先看这个】如果你正在跑 npm run dev，报错会直接打在【那个终端】里，
+   长得像这样：
+
+       Failed to reload 你的文章.md: posts → 你的文章 data does not
+       match collection schema.
+         title: 标题不能为空：title: 后面要写上标题
+
+   也就是：文件名 + 中文原因。直接改那个文件的那个字段就行。
+
+   最常见的三种原因：
+
+   - 标题留空
+         title:
+         → 改成  title: 我的标题
+   - 日期留空
+         date:
+         → 改成  date: 2026-09-27
+         注意：日期留空不会变成「今天」，而是会变成一个假日期，
+         所以要写清楚。
+   - 草稿那一行只写了一个值，把键名丢了：
+
+         错误：draft: true   →   只留一个 false
+         正确：draft: true   →   draft: false
+
+     frontmatter 里每一行都必须是「键名: 值」的形式，光写值 YAML 读不懂。
+
+   【重要】这类错误会让整个网站都构建不出来，不只是那一篇不显示。
+   报错信息里提到的那个文件就是凶手，先去修它。
+
+Q: 我改了文章内容，但网站上的内容没变？
+A: 分两种情况：
+
+   1) 整条内容不见了 / 列表里空了
+      → 多半是 frontmatter 被改坏了。去看跑 npm run dev 的那个终端，
+        里面会打「Failed to reload xxx.md」，后面跟着原因。
+        常见的是 title: 或 date: 后面留空了。
+
+   2) 内容还在，只是还是旧的
+      → 开发服务器的缓存问题，Ctrl + C 停掉重新 npm run dev。
+
+   两种情况的共同点：先跑 npm run build 看看。如果构建成功，
+   说明文件本身没问题；如果构建报错，那就是文件写错了，按报错改。
+
+Q: 文章和动态的网址为什么不一样？
+A: 文章在 /posts/ 下面，动态在 /thoughts/ 下面，两个分区完全独立、
+   互不影响。「上一条 / 下一条」也只在同一个分区里跳转。
+
+Q: 鼠标划到窗口底部会浮出一条黑色的东西，那是什么？能删掉吗？
+A: 那是 Astro 的「开发工具条」，只在本地 npm run dev 时出现，
+   正式 npm run build 出来的网站里完全没有它，访客看不到。
+   它跟你的网站内容无关，是 Astro 提供的调试面板，最左边是 Astro 图标，
+   中间是 Audit（无障碍检查），右边是设置（调位置、看日志、隐藏工具条）。
+
+   已经帮你在 astro.config.mjs 里关掉了：
+
+       devToolbar: { enabled: false },
+
+   想临时打开看看，把这一行注释掉再重启 npm run dev 就行。
+   如果只是偶尔嫌它挡视线，也可以点它右侧的设置 → Hide toolbar 临时收起。
+
+Q: 两个新建脚本有什么区别？记不住怎么办？
+A: new-article.mjs 建的是文章（type: tech，网址 /posts/），
+   new-thought.mjs 建的是动态（type: thought，网址 /thoughts/）。
+   记不住就跑 npm run article，看输出里的预览网址前缀就知道了。
+   实在不确定就用 new-article.mjs，建完手动把 type 改成 thought 也行。
+
+Q: 标签页里少了一个标签，或者标签整个不见了？
+A: 标签是从内容里自动汇总的，没用到的标签不会存在。某个标签下的内容
+   全被删掉（或都变成了草稿）时，那个标签就会自动消失。
+   想让一个标签出现，用 npm run tag 把它加到某篇内容上即可。
+
+Q: 我用 npm run tag 加完标签，页面没变？
+A: 标签改动需要重新构建才会反映到线上：本地 npm run dev 会自动刷新，
+   正式环境要重新 npm run build 并部署。
+
+Q: 网站打开是空的，只有一句「还没有内容」？
+A: 演示用的内容已经清空了，写第一篇就有东西了：
+      npm run article     或     npm run thought
+
+Q: 想改侧边栏里每个区块的标题（比如「NOW PLAYING」「写作热力图」）？
+A: 打开 src/components/Sidebar.astro，找到对应的
+   <h2 class="section-title">...</h2>，改里面的文字即可。
+
+Q: 想调整首页每个分区显示几条？
+A: 打开 src/pages/index.astro，最上面有：
+       const ARTICLE_LIMIT = 3;   首页显示几篇文章
+       const THOUGHT_LIMIT = 4;   首页显示几条动态
+   改这两个数字即可。
+
+Q: 标签页面的网址里有中文，会不会有问题？
+A: 不会。构建出来的文件夹名就是中文，主流托管平台都能正常访问。
+
+Q: 怎么让别人搜到我的文章？
+A: 搜索功能是站内的（顶部搜索框）。想让搜索引擎收录，部署后去
+   Google Search Console / Bing 站长工具提交你的域名即可。

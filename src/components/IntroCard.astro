@@ -1,0 +1,36 @@
+---
+import { getEntry, render } from 'astro:content';
+
+interface Props {
+  /** 是否显示「查看完整介绍」的链接 */
+  showMore?: boolean;
+}
+
+const { showMore = true } = Astro.props;
+
+const about = await getEntry('about', 'index');
+const Content = about ? (await render(about)).Content : null;
+---
+
+<div class="card intro">
+  <div class="intro__body">
+    {
+      Content ? (
+        <Content />
+      ) : (
+        <p>
+          还没有自我介绍 —— 打开 <code>src/content/about/index.md</code> 写点什么吧。
+        </p>
+      )
+    }
+  </div>
+
+  {
+    showMore && (
+      <a class="intro__more" href="/about/">
+        查看完整介绍
+        <span aria-hidden="true">→</span>
+      </a>
+    )
+  }
+</div>

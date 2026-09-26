@@ -1,0 +1,36 @@
+---
+import { getEntry, render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { formatDate } from '@/lib/posts';
+
+const about = await getEntry('about', 'index');
+const Content = about ? (await render(about)).Content : null;
+---
+
+<BaseLayout title="自我介绍" description="关于我，以及这个站点">
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">About me</p>
+      <h1 class="page-head__title">{about?.data.title ?? '自我介绍'}</h1>
+      {
+        about?.data.updated && (
+          <p class="page-head__desc">
+            最后更新于 <time datetime={formatDate(about.data.updated)}>{formatDate(about.data.updated)}</time>
+          </p>
+        )
+      }
+    </header>
+  </Fragment>
+
+  <article class="card about-card prose">
+    {
+      Content ? (
+        <Content />
+      ) : (
+        <p>
+          还没有自我介绍 —— 编辑 <code>src/content/about/index.md</code> 即可，支持完整的 Markdown。
+        </p>
+      )
+    }
+  </article>
+</BaseLayout>

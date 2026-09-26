@@ -1,0 +1,190 @@
+---
+/**
+ * 音乐播放器：APlayer + MetingJS
+ * ====================================================================
+ * 这是「在线歌单」方案，直接解析网易云的歌单，不需要把音频文件放进仓库，
+ * 因此不会把音乐文件再分发出去。
+ *
+ * 它由三部分组成：
+ *   1. CDN 引入 APlayer 的样式和脚本（播放器本体）
+ *   2. CDN 引入 MetingJS（负责去 Meting API 拉歌单，喂给 APlayer）
+ *   3. <meting-js> 自定义元素 + 一小段「首次交互后才播放」的脚本
+ *
+ * ★ 你的网易云歌单 ID 不在这个文件里，在：
+ *      src/data/site.ts  →  export const meting = { id: '...' }
+ *   那里有详细的获取步骤说明。
+ *
+ * ★ 想换回播放本地音频文件，改：
+ *      src/data/site.ts  →  export const musicMode = 'local'
+ */
+import { meting } from '@/data/site';
+---
+
+{/* ---------- 1 + 2. 从 CDN 引入依赖（is:inline 表示原样输出，不参与打包）---------- */}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.css" />
+<script is:inline src="https://cdn.jsdelivr.net/npm/aplayer@1.10.1/dist/APlayer.min.js"></script>
+<script is:inline src="https://cdn.jsdelivr.net/npm/meting@2/dist/Meting.min.js"></script>
+
+{/* ---------- 3. 播放器本体 ---------- */}
+<div class="meting-wrap" data-meting-player>
+  {/*
+    <meting-js> 的属性会直接变成 APlayer 的配置，中划线命名会被转成驼峰。
+    所有值都来自 src/data/site.ts，改歌单 ID 去那里改。
+
+    这里两个关键设置：
+      order="random"   —— 随机播放
+      autoplay="false" —— 不让 APlayer 自己尝试自动播放，
+                          改由下面那段脚本在「访客第一次交互」之后触发，
+                          这样既不会撞上浏览器的自动播放拦截，能播的时候也会自动开始。
+  */}
+  <meting-js
+    server={meting.server}
+    type={meting.type}
+    id={meting.id}
+    api={meting.api}
+    order={meting.order}
+    loop={meting.loop}
+    lrc-type={meting.lrcType}
+    list-folded={String(meting.listFolded)}
+    list-max-height={meting.listMaxHeight}
+    theme={meting.theme}
+    preload="none"
+    autoplay="false"
+    fixed="false"
+    mini="false"
+  ></meting-js>
+
+  {/* 歌单拉不到时（通常是 Meting API 挂了）才显示 */}
+  <p class="meting-error" data-meting-error hidden>
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2 1 21h22zm0 6 6.5 11h-13zM11 10h2v5h-2zm0 6h2v2h-2z" />
+    </svg>
+    <span>
+      歌单加载失败 —— 多半是所用的 Meting API 暂时不可用。可以在
+      <code>src/data/site.ts</code> 里把 <code>meting.api</code> 换成自己部署的地址（见
+      <code>使用说明.txt</code> 第 4 节）。
+    </span>
+  </p>
+</div>
+
+<script is:inline>
+  /**
+   * 播放逻辑：
+   *   - APlayer 侧已经关掉自动播放（autoplay="false"），所以打开页面不会撞上
+   *     浏览器的「禁止自动播放」拦截，控制台也不会报错。
+   *   - 这里监听访客在页面上的第一次交互（点击 / 按键 / 触摸），那一刻再开始播。
+   *     浏览器会认为这是用户主动触发的，于是放行。
+   *   - 歌单是异步拉的：如果交互发生在歌单就绪之前，监听器不会被消耗掉，
+   *     等歌单就绪后会自动补上。
+   *   - 开始播放时走的是 APlayer 自己的播放按钮（而不是直接调 play() API）：
+   *     直接调 API 有可能和 APlayer 内部的加载过程抢时序，被它自己的
+   *     catch 逻辑暂停掉。点按钮就没有这个问题，而且会同步更新播放器的 UI。
+   */
+  (function () {
+    var wrap = document.querySelector('[data-meting-player]');
+    if (!wrap) return;
+
+    var el = wrap.querySelector('meting-js');
+    if (!el) return;
+
+    /** 用户产生交互的事件，用捕获阶段监听，先于页面自身的处理 */
+    var EVENTS = ['pointerdown', 'keydown', 'touchstart'];
+    /** 歌单是网络请求，给足等待时间 */
+    var WAIT_LIMIT = 20;
+    /** 播放没起来时最多重试几次 */
+    var MAX_ATTEMPTS = 5;
+
+    var interacted = false;
+    var done = false;
+    var attempts = 0;
+
+    /** MetingJS 把 APlayer 实例挂在自定义元素上：el.aplayer */
+    function player() {
+      return el.aplayer || null;
+    }
+
+    /** 歌单真的拿到了（APlayer 里有歌）才算就绪 */
+    function ready() {
+      var ap = player();
+      return !!(ap && ap.list && ap.list.audios && ap.list.audios.length > 0);
+    }
+
+    function playing() {
+      var ap = player();
+      return !!(ap && ap.audio && !ap.audio.paused);
+    }
+
+    function stopWatching() {
+      EVENTS.forEach(function (type) {
+        document.removeEventListener(type, onInteract, true);
+      });
+    }
+
+    function finish() {
+      done = true;
+      stopWatching();
+    }
+
+    function tryStart() {
+      if (done || !interacted || !ready()) return;
+
+      if (playing()) {
+        finish();
+        return;
+      }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        /* 试了几次都没起来，就此收手，让访客自己点播放键 */
+        finish();
+        return;
+      }
+      attempts += 1;
+
+      var trigger = el.querySelector('.aplayer-pic');
+      if (trigger) {
+        trigger.click();
+      } else {
+        try {
+          player().play();
+        } catch (err) {
+          /* 忽略，下面会再确认一次 */
+        }
+      }
+
+      /* 稍后确认是否真的播起来了，没起来就再试一次 */
+      window.setTimeout(tryStart, 600);
+    }
+
+    function onInteract(event) {
+      /* 访客自己操作了播放器，那是他的意图，我们不要插手 */
+      if (event && event.target && el.contains(event.target)) {
+        finish();
+        return;
+      }
+      interacted = true;
+      tryStart();
+    }
+
+    EVENTS.forEach(function (type) {
+      document.addEventListener(type, onInteract, true);
+    });
+
+    /* 轮询等歌单就绪；约 10 秒还没拿到就提示可能是 Meting API 的问题 */
+    var waited = 0;
+    var timer = window.setInterval(function () {
+      waited += 1;
+
+      if (ready()) {
+        window.clearInterval(timer);
+        tryStart();
+        return;
+      }
+
+      if (waited > WAIT_LIMIT) {
+        window.clearInterval(timer);
+        var tip = wrap.querySelector('[data-meting-error]');
+        if (tip) tip.hidden = false;
+      }
+    }, 500);
+  })();
+</script>

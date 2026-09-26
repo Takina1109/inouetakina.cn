@@ -1,0 +1,98 @@
+---
+/**
+ * 文章 / 动态的详情页布局
+ * /posts/<slug>/ 和 /thoughts/<slug>/ 两个路由共用这一个文件，避免重复。
+ */
+import { render } from 'astro:content';
+import TagList from '@/components/TagList.astro';
+import TypeBadge from '@/components/TypeBadge.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import {
+  formatDate,
+  formatDateCN,
+  getNeighbors,
+  getPosts,
+  readingTime,
+  type Post,
+} from '@/lib/posts';
+
+interface Props {
+  post: Post;
+}
+
+const { post } = Astro.props;
+const { data } = post;
+
+const { Content } = await render(post);
+const posts = await getPosts();
+const { newer, older } = getNeighbors(posts, post);
+
+const isTech = data.type === 'tech';
+const backHref = isTech ? '/posts/' : '/thoughts/';
+const backLabel = isTech ? '全部文章' : '全部动态';
+---
+
+<BaseLayout title={data.title} description={data.description || data.title}>
+  <!-- 标题区横跨整页，和顶栏一样比正文更靠左 -->
+  <Fragment slot="hero">
+    <header class="page-head">
+      <div class="post-card__head">
+        <TypeBadge type={data.type} />
+        {data.pinned && <span class="post-card__pin">📌 置顶</span>}
+      </div>
+
+      <h1 class="page-head__title article__title">{data.title}</h1>
+
+      <div class="article__meta">
+        <span class="article__meta-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 2v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2V2h-2v2H9V2zm12 8v10H5V10z" />
+          </svg>
+          <time datetime={formatDate(data.date)}>{formatDateCN(data.date)}</time>
+        </span>
+
+        <span class="article__meta-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 4a8 8 0 1 0 8 8h-2a6 6 0 1 1-6-6zm1-2v9l7 4-1 1.7-8-4.7V2z" />
+          </svg>
+          约 {readingTime(post.body)}
+        </span>
+
+        {data.updated && <span class="article__meta-item">修订于 {formatDate(data.updated)}</span>}
+      </div>
+
+      {data.tags.length > 0 && <TagList tags={data.tags} />}
+    </header>
+  </Fragment>
+
+  <article class="article">
+    <div class="prose">
+      <Content />
+    </div>
+
+    <footer class="article-footer">
+      <div class="pager">
+        {
+          older ? (
+            <a class="pager__link pager__link--prev" href={`/${isTech ? 'posts' : 'thoughts'}/${older.id}/`}>
+              <span class="pager__label">← 上一条</span>
+              <span class="pager__title">{older.data.title}</span>
+            </a>
+          ) : (
+            <span />
+          )
+        }
+        {
+          newer && (
+            <a class="pager__link pager__link--next" href={`/${isTech ? 'posts' : 'thoughts'}/${newer.id}/`}>
+              <span class="pager__label">下一条 →</span>
+              <span class="pager__title">{newer.data.title}</span>
+            </a>
+          )
+        }
+      </div>
+
+      <a class="intro__more" href={backHref}>← {backLabel}</a>
+    </footer>
+  </article>
+</BaseLayout>

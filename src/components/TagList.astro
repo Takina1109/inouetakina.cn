@@ -1,0 +1,26 @@
+---
+interface Props {
+  tags: string[];
+  /** 最多显示几个标签 */
+  limit?: number;
+  /** 以纯文本展示（不生成链接），用于搜索结果等处 */
+  plain?: boolean;
+}
+
+const { tags, limit, plain = false } = Astro.props;
+const list = typeof limit === 'number' ? tags.slice(0, limit) : tags;
+---
+
+<div class="tag-list">
+  {
+    list.map((tag) =>
+      plain ? (
+        <span class="tag">{tag}</span>
+      ) : (
+        <a class="tag" href={`/tags/${encodeURIComponent(tag)}/`}>
+          {tag}
+        </a>
+      )
+    )
+  }
+</div>

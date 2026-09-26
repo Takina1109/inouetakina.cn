@@ -1,0 +1,41 @@
+---
+/**
+ * 动态列表（只显示 type: thought）
+ * 用时间轴样式渲染，和「文章」列表在视觉上分开。
+ * 顶部导航「动态」按钮指向这里。
+ */
+import ThoughtItem from '@/components/ThoughtItem.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getPosts } from '@/lib/posts';
+
+const posts = await getPosts();
+const thoughts = posts.filter((p) => p.data.type === 'thought');
+---
+
+<BaseLayout title="动态" description="随手记下的想法和日常">
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">Thoughts</p>
+      <h1 class="page-head__title">动态</h1>
+      <p class="page-head__desc">
+        随手记下的想法、看番的感想、生活里的一点观察 —— 共 {thoughts.length} 条。技术文章在
+        <a href="/posts/">文章</a>里。
+      </p>
+    </header>
+  </Fragment>
+
+  {
+    thoughts.length > 0 ? (
+      <ul class="timeline">
+        {thoughts.map((post) => (
+          <ThoughtItem post={post} />
+        ))}
+      </ul>
+    ) : (
+      <p class="empty-state">
+        还没有动态。新建时把 frontmatter 里的 <code>type</code> 写成 <code>thought</code>{' '}
+        就会出现在这里 ✎
+      </p>
+    )
+  }
+</BaseLayout>

@@ -1,0 +1,14 @@
+---
+import { postTypes, type PostType } from '@/data/site';
+
+interface Props {
+  type: PostType;
+}
+
+const { type } = Astro.props;
+const { label, emoji } = postTypes[type];
+---
+
+<span class={`type-badge type-badge--${type}`}>
+  <span aria-hidden="true">{emoji}</span>{label}
+</span>

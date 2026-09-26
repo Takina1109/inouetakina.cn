@@ -1,0 +1,107 @@
+---
+import PostCard from '@/components/PostCard.astro';
+import ThoughtItem from '@/components/ThoughtItem.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getPosts, getTagCounts } from '@/lib/posts';
+
+const posts = await getPosts();
+const articles = posts.filter((p) => p.data.type === 'tech');
+const thoughts = posts.filter((p) => p.data.type === 'thought');
+const tags = getTagCounts(posts).slice(0, 10);
+
+/* 首页每个分区展示几条 */
+const ARTICLE_LIMIT = 3;
+const THOUGHT_LIMIT = 4;
+---
+
+<BaseLayout>
+  <!-- 这个 header 会横跨整页宽度，所以比右边正文更靠左 -->
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">Welcome ✧</p>
+      <h1 class="page-head__title">随便写写的地方</h1>
+      <p class="page-head__desc">
+        目前有 <b>{posts.length}</b> 篇记录 —— 文章 {articles.length} 篇，动态 {thoughts.length} 条。
+        上方可以点「文章 / 动态 / 标签」分区浏览，也可以直接搜索。
+      </p>
+    </header>
+  </Fragment>
+
+  {posts.length === 0 && <p class="empty-state">还没有内容，去 src/content/posts/ 写第一条吧 ✎</p>}
+
+  {
+    articles.length > 0 && (
+      <section class="block">
+        <div class="block__head">
+          <h2 class="block__title">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-5 14H7v-2h7zm3-4H7v-2h10zm0-4H7V7h10z" />
+            </svg>
+            最新文章
+            <span class="block__count">{articles.length}</span>
+          </h2>
+          <span class="block__line" />
+          <a class="block__more" href="/posts/">全部文章 →</a>
+        </div>
+
+        <ul class="post-list">
+          {articles.slice(0, ARTICLE_LIMIT).map((post) => (
+            <li>
+              <PostCard post={post} />
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    thoughts.length > 0 && (
+      <section class="block">
+        <div class="block__head">
+          <h2 class="block__title">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z" />
+            </svg>
+            最新动态
+            <span class="block__count">{thoughts.length}</span>
+          </h2>
+          <span class="block__line" />
+          <a class="block__more" href="/thoughts/">全部动态 →</a>
+        </div>
+
+        <ul class="timeline">
+          {thoughts.slice(0, THOUGHT_LIMIT).map((post) => (
+            <ThoughtItem post={post} />
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  {
+    tags.length > 0 && (
+      <section class="block">
+        <div class="block__head">
+          <h2 class="block__title">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7A1.5 1.5 0 1 1 7 5.5 1.5 1.5 0 0 1 5.5 7z" />
+            </svg>
+            常用标签
+          </h2>
+          <span class="block__line" />
+          <a class="block__more" href="/tags/">全部标签 →</a>
+        </div>
+
+        <nav class="filter-bar" aria-label="常用标签">
+          {tags.map(({ tag, count }) => (
+            <a class="chip" href={`/tags/${encodeURIComponent(tag)}/`}>
+              #{tag}
+              <span class="tag__count">{count}</span>
+            </a>
+          ))}
+        </nav>
+      </section>
+    )
+  }
+</BaseLayout>

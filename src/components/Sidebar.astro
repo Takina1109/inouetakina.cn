@@ -1,0 +1,66 @@
+---
+import { musicMode, playerConfig, playlist, site } from '@/data/site';
+import type { HeatmapData, SiteStats } from '@/lib/posts';
+import Avatar from './Avatar.astro';
+import Heatmap from './Heatmap.tsx';
+import MetingPlayer from './MetingPlayer.astro';
+import MusicPlayer from './MusicPlayer.tsx';
+import SiteStats from './SiteStats.astro';
+import SocialLinks from './SocialLinks.astro';
+
+interface Props {
+  heatmap: HeatmapData;
+  stats: SiteStats;
+}
+
+const { heatmap, stats } = Astro.props;
+const year = new Date().getFullYear();
+
+/* 用哪套播放器由 src/data/site.ts 的 musicMode 决定 */
+const useMeting = musicMode === 'meting';
+---
+
+<aside class="sidebar">
+  <!-- 1. 圆形头像（距顶部约 4/10） -->
+  <Avatar />
+
+  <!-- 2. 社交链接（头像正下方） -->
+  <SocialLinks />
+
+  <!-- 3. 音乐播放器（头像 + 链接下方）
+       默认是 APlayer + MetingJS（在线歌单）；
+       改 src/data/site.ts 的 musicMode 为 'local' 就切回本地音频播放器。 -->
+  <section class="side-block">
+    <h2 class="section-title">Now Playing</h2>
+    {
+      useMeting ? (
+        <MetingPlayer />
+      ) : (
+        <MusicPlayer
+          client:load
+          tracks={playlist}
+          autoplay={playerConfig.autoplay}
+          shuffle={playerConfig.shuffle}
+          volume={playerConfig.volume}
+          loop={playerConfig.loop}
+        />
+      )
+    }
+  </section>
+
+  <!-- 4. 写作热力图 -->
+  <section class="side-block">
+    <h2 class="section-title">写作热力图</h2>
+    <Heatmap client:load data={heatmap} />
+  </section>
+
+  <!-- 5. 站点信息（建站时间 / 文章总数 / 总字数 / 最后更新） -->
+  <section class="side-block side-block--last">
+    <h2 class="section-title">站点信息</h2>
+    <SiteStats stats={stats} />
+  </section>
+
+  <p class="sidebar__copyright">
+    © {site.since}–{year} {site.author}
+  </p>
+</aside>
