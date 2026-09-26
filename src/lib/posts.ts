@@ -264,8 +264,22 @@ export function buildHeatmap(posts: Post[], weeks = 53): HeatmapData {
 
   const todayKey = toISODate(new Date());
 
-  // 以「本周周六」为最后一格
-  const end = new Date();
+  /*
+   * 最后一格取「本周周六」。
+   *
+   * 但这里必须同时考虑最新一篇的日期。原因是构建机（GitHub Actions）跑在
+   * UTC，而文章日期写的是本地日期 —— 构建那一刻可能比文章日期「早一天」。
+   * 如果那天又正好是周六，窗口右边界就等于构建当天，刚写好的文章会落在
+   * 窗口右边之外被整个漏掉：热力图写着「共 0 篇」，可文章明明在列表里。
+   * 取 现在 和 最新一篇 里较晚的那个，就不会漏，
+   * 顺便也让「日期写在未来」的文章能正常出现在热力图上。
+   */
+  const newest = posts.reduce(
+    (max, post) => Math.max(max, post.data.date.getTime()),
+    0
+  );
+
+  const end = new Date(Math.max(Date.now(), newest));
   end.setHours(0, 0, 0, 0);
   end.setDate(end.getDate() + (6 - end.getDay()));
 
