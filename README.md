@@ -416,22 +416,37 @@ export const monoDark = createMonoTheme({
 
 ## 七、部署
 
-1. 把 `astro.config.mjs` 里的 `site` 改成你的域名（RSS 与绝对链接会用到）：
+本站部署在 **GitHub Pages**，线上地址 `https://inouetakina.cn`，
+仓库 `Takina1109/inouetakina.cn`。
 
-```js
-export default defineConfig({
-  site: 'https://你的域名',
-  // ...
-});
-```
+### 自动化流程
 
-2. `npm run build`，然后把 `dist/` 交给任意静态托管：
+`.github/workflows/deploy.yml` 用官方 `withastro/action` 构建并发布，每次
+push 到 `main` 自动触发（也可以在 Actions 页面手动 dispatch 一次）。
+**不需要**在本地构建，也**不需要** `gh-pages` 分支。
+
+### 三处必须一致的域名配置
+
+| 位置 | 值 | 作用 |
+| --- | --- | --- |
+| `astro.config.mjs` 的 `site` | `https://inouetakina.cn` | RSS、绝对链接 |
+| `src/data/site.ts` 的 `url` | `https://inouetakina.cn` | 同上，运行时用 |
+| `public/CNAME` | `inouetakina.cn` | 进构建产物，告诉 Pages 用哪个域名 |
+
+换域名时这三处要连同仓库 Settings → Pages 的 Custom domain 一起改。
+
+### 为什么不要设 base
+
+`base` 只在站点被放到子路径时才需要（如 `user.github.io/repo/`）。本项目走
+自定义域名，站点挂在根路径，**设了 `base` 反而会让所有内部链接多一层前缀**。
+
+### 换成别的托管平台
 
 | 平台 | 设置 |
 | --- | --- |
+| GitHub Pages | 本项目用法：`withastro/action` + `deploy-pages` 自动部署 |
 | Vercel / Netlify | 构建命令 `npm run build`，输出目录 `dist` |
 | Cloudflare Pages | 同上 |
-| GitHub Pages | 构建后把 `dist/` 推到 `gh-pages` 分支（若部署在子路径，需要同时设置 `site` 和 `base`） |
 
 ---
 

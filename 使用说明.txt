@@ -654,35 +654,100 @@ src/content/posts/ 里原来有 9 篇演示用的文章和动态，现在已经�
 7. 部署上线
 ====================================================================
 
-第一步：告诉网站你的域名。打开 astro.config.mjs，找到：
+【现在已经是部署好的状态】网站地址：https://inouetakina.cn
 
-    site: 'https://example.com',
+    仓库：https://github.com/Takina1109/inouetakina.cn
+    方式：GitHub Actions 自动构建并部署（配置在 .github/workflows/deploy.yml）
 
-改成你自己的域名，比如：
+  意思是：你只管 push，剩下的 GitHub 自己会做。不需要在本地 build，
+  也不需要手动传文件上去。
 
-    site: 'https://blog.yourname.com',
 
-这一步影响 RSS 订阅里的链接，别跳过。
+--- 7.1 日常更新（最常用） -----------------------------------------
 
-第二步：构建
+写完文章后，三条命令推上线：
 
-    npm run build
+    git add -A
+    git commit -m "写点什么"
+    git push
 
-会生成 dist/ 文件夹，里面就是完整的静态网站。
+push 完等 1~2 分钟，网站就更新了。
 
-第三步：把 dist/ 传到静态托管平台，任选一个：
+  看构建进度：仓库页面 → 上面 Actions 标签 → 点最新那条记录
+  想重新部署：进去了点右边 Re-run all jobs
 
-  Vercel / Netlify / Cloudflare Pages：
-    - 把项目推到 GitHub，在平台上导入这个仓库
-    - 构建命令填：npm run build
-    - 输出目录填：dist
-    - 之后每次 push 都会自动重新部署
+  【注意】草稿（draft: true）在构建时会被跳过，所以不会出现在线上。
+         本地 npm run dev 能看到它，线上看不到，这是正常的。
 
-  GitHub Pages：
-    - 本地执行 npm run build
-    - 把 dist/ 里的内容推到 gh-pages 分支
-    - 如果网址带有子路径（比如 user.github.io/blog），还要在
-      astro.config.mjs 里加一行 base: '/blog'
+
+--- 7.2 这个站点的部署是怎么配的 -----------------------------------
+
+三个地方合起来决定域名能不能用：
+
+  1) astro.config.mjs 里的 site
+         site: 'https://inouetakina.cn',
+     影响 RSS 和绝对链接。改域名时这里要跟着改。
+
+  2) src/data/site.ts 里的 url
+         要和上面那个 site 保持一致
+
+  3) public/CNAME 文件
+         里面只有一行：inouetakina.cn
+     构建时会被复制成 dist/CNAME，告诉 GitHub Pages 用哪个域名。
+
+  另外仓库的 Settings → Pages 里：Source 选的是「GitHub Actions」，
+  Custom domain 填的是 inouetakina.cn。这一页平时不用动。
+
+
+【DNS 已经配好了，不用改】域名在聚名（julydns）解析，现有记录是：
+
+    根域名 inouetakina.cn     A       185.199.108.153
+                                     185.199.109.153
+                                     185.199.110.153
+                                     185.199.111.153
+    www.inouetakina.cn        CNAME   takina1109.github.io
+
+  这四条 A 记录就是 GitHub Pages 的服务器地址。
+
+
+--- 7.3 以后想换成别的域名 -----------------------------------------
+
+  1. astro.config.mjs 的 site 改成新域名
+  2. src/data/site.ts 的 url 改成新域名
+  3. public/CNAME 里那一行改成新域名
+  4. 仓库 Settings → Pages → Custom domain 改成新域名
+  5. 新域名那边把 DNS 按上面的表指向 GitHub Pages
+  6. git add -A && git commit && git push
+
+  【重要】同一个域名同时只能被一个 GitHub 仓库使用。如果你建了新仓库，
+         要把旧仓库的 Custom domain 先清空，新仓库才挂得上。
+
+
+--- 7.4 push 不上去怎么办 ------------------------------------------
+
+【最常见：连不上 github.com】
+
+    fatal: Failed to connect to github.com port 443
+
+  Git 不会读 Windows 的「系统代理」设置，所以哪怕你开着代理，
+  git 也可能在直连。给这个仓库单独配一下（只对 github.com 生效，
+  不动你的全局配置）：
+
+      git config --local "http.https://github.com.proxy" "http://127.0.0.1:7897"
+
+  7897 是 Clash 的默认端口。你的代理端口不一样的话就换成自己的
+  （在代理软件设置里能看到）。
+  想取消这条配置：
+      git config --local --unset "http.https://github.com.proxy"
+
+【第一次 push 要登录】
+
+  正常情况下会弹出一个 GitHub 登录窗口，登一次就记住了。
+  如果没有弹窗、而是在终端里让你输用户名密码：
+    - 用户名填 Takina1109
+    - 密码不能填账号密码，要填 Personal Access Token
+      在 GitHub → Settings → Developer settings → Personal access
+      tokens 里建一个，勾上 repo 权限，把那一串字符粘进去
 
 
 ====================================================================
