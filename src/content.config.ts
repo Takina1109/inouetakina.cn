@@ -1,5 +1,6 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { RECOMMEND_CATEGORIES } from './data/recommend';
 
 /**
  * 文章集合
@@ -97,4 +98,74 @@ const about = defineCollection({
   }),
 });
 
-export const collections = { posts, about };
+/**
+ * 把 links 归一化成 [{ label, url }]。
+ *
+ * 预期写法：
+ *   links:
+ *     - label: 萌娘百科
+ *       url: https://zh.moegirl.org.cn/xxx
+ *     - label: 百度百科
+ *       url: https://baike.baidu.com/item/xxx
+ *
+ * 只写了 url 忘了 label、或整段写成了字符串，出问题的条目会被直接丢掉 ——
+ * 宁可少一个链接，也不让整条推荐加载失败从页面上消失。
+ */
+function normalizeLinks(value: unknown): { label: string; url: string }[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const label = String(record.label ?? '').trim();
+    const url = String(record.url ?? '').trim();
+    return label && url ? [{ label, url }] : [];
+  });
+}
+
+/**
+ * 推荐集合：书 / 动漫
+ *
+ * 文件放在 src/content/recommend/ 里，文件名就是网址最后一段
+ * （比如 夏日重现.md → /recommend/夏日重现/）。
+ * category 决定它出现在推荐页的哪个板块，四个合法取值定义在
+ * src/data/recommend.ts —— 那份列表是单一事实来源，这里直接引用。
+ */
+const recommend = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/recommend' }),
+  schema: z.object({
+    title: z.preprocess(
+      (value) => String(value ?? '').trim(),
+      z.string().min(1, '名称不能为空：title: 后面要写上书名 / 番名')
+    ),
+    /*
+     * 板块。这里故意用严格枚举：写错会明确报错并列出所有合法取值。
+     * 报错总比「悄悄跑到别的板块去」好排查。
+     */
+    category: z.preprocess(
+      (value) => String(value ?? '').trim(),
+      z.enum([...RECOMMEND_CATEGORIES], {
+        error: `category 只能是这几个之一：${RECOMMEND_CATEGORIES.join(' / ')}`,
+      })
+    ),
+    /** 作者 / 原作 / 制作公司，随便写一句副标题 */
+    author: z.preprocess((value) => String(value ?? '').trim(), z.string()),
+    /** 一句话短评，显示在卡片上 */
+    note: z.preprocess((value) => String(value ?? '').trim(), z.string()),
+    /** 封面图：图片放进 public/ 后写成 /图片名.jpg */
+    cover: z.string().nullish(),
+    /** 参考链接（萌娘百科 / 百度百科 等），写法见下面的 normalizeLinks */
+    links: z.preprocess(
+      normalizeLinks,
+      z.array(z.object({ label: z.string(), url: z.string() }))
+    ),
+    /** 收录日期，用于排序；不写就排在最后 */
+    date: z.coerce.date().nullish(),
+    /** 草稿：npm run build 时不会输出 */
+    draft: z
+      .boolean()
+      .nullish()
+      .transform((value) => value ?? false),
+  }),
+});
+
+export const collections = { posts, about, recommend };

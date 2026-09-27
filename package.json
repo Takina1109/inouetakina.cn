@@ -11,6 +11,7 @@
     "check": "astro check",
     "article": "node new-article.mjs",
     "thought": "node new-thought.mjs",
+    "recommend": "node new-recommend.mjs",
     "tag": "node new-tag.mjs"
   },
   "keywords": [],

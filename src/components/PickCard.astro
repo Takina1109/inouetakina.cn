@@ -1,0 +1,48 @@
+---
+/**
+ * 推荐卡片：封面在左，文字在右。
+ * 封面用 CSS background-image 而不是 <img>：图片路径写错时只会显示灰底，
+ * 不会出现裂图图标（和音乐播放器封面同一个道理）。
+ */
+import { pickUrl, type Pick } from '@/lib/recommend';
+
+interface Props {
+  pick: Pick;
+}
+
+const { pick } = Astro.props;
+const { data } = pick;
+const url = pickUrl(pick);
+const initial = data.title.trim().charAt(0);
+---
+
+<article class="card pick-card">
+  <div
+    class="pick-card__cover"
+    style={data.cover ? `background-image: url('${data.cover}')` : undefined}
+    aria-hidden="true"
+  >
+    {!data.cover && initial}
+  </div>
+
+  <div class="pick-card__body">
+    <h3 class="pick-card__title">
+      <a href={url}>{data.title}</a>
+    </h3>
+
+    {data.author && <p class="pick-card__author">{data.author}</p>}
+    {data.note && <p class="pick-card__note">{data.note}</p>}
+
+    {
+      data.links.length > 0 && (
+        <div class="pick-card__links">
+          {data.links.map((link) => (
+            <a class="chip" href={link.url} target="_blank" rel="noopener noreferrer">
+              {link.label} ↗
+            </a>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</article>

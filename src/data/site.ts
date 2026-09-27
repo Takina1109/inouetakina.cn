@@ -38,11 +38,11 @@ export interface Track {
 }
 
 export const site = {
-  /** 站点标题（浏览器标签页 / 侧边栏主标题） */
-  title: 'TAKINA',
+  /** 站点标题：只用在浏览器标签页 / RSS / 分享卡片上，不显示在侧边栏 */
+  title: '风の道標',
   /** 站点副标题 / 一句话简介 */
   description: '学习和生活记录',
-  /** 你的名字（侧边栏头像下方） */
+  /** 你的名字：侧边栏头像下方那个名字 + 页脚版权 */
   author: 'TAKINA',
   /** 头像：替换 public/ 下的文件即可 */
   avatar: '/touxiang.jpg',
@@ -78,6 +78,11 @@ export const socials: SocialLink[] = [
     label: '网易云音乐',
     url: 'https://music.163.com/#/user/home?id=12256808595',
     icon: 'neteasecloudmusic',
+  },
+  {
+    label: 'steam',
+    url: 'https://steamcommunity.com/profiles/76561199403803577/',
+    icon: 'steam',
   },
 ];
 

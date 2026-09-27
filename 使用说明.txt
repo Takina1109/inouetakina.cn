@@ -9,7 +9,7 @@
   0. 三分钟跑起来
   1. 速查表：想改什么 → 去哪里改
   2. 换成你自己的信息（名字 / 头像 / 社交链接 / 自我介绍 / 站点信息）
-  3. 上传文章和动态
+  3. 上传内容（文章 / 动态 / 推荐）
   4. 音乐播放器（在线歌单 / 本地文件）
   5. 改配色和布局
   6. 现在的状态与待办
@@ -46,10 +46,10 @@
 
   想改的东西                     打开这个文件                  改哪一句
   ------------------------------------------------------------------
-  网站名字                        src/data/site.ts              title
+  网站名字（标签页 / RSS）        src/data/site.ts              title
   头像                            src/data/site.ts              avatar
+  头像下面显示的名字              src/data/site.ts              author
   头像下面的签名                  src/data/site.ts              tagline
-  你的名字（页脚）                src/data/site.ts              author
   网站简介（搜索引擎用）          src/data/site.ts              description
   页脚版权年份                    src/data/site.ts              since
   建站时间（侧边栏那张表）        src/data/site.ts              launched
@@ -62,15 +62,18 @@
   自我介绍                        src/content/about/index.md    直接改正文
   文章（技术类）                  src/content/posts/xxx.md      ——
   动态（随想类）                  src/content/posts/xxx.md      ——
+  推荐（书 / 动漫）               src/content/recommend/xxx.md  ——
   标签                            跑 npm run tag               加 / 删 / 看统计
 
   侧边栏宽度                      src/styles/global.css         --sidebar-w
   侧边栏整体下移多少              src/styles/global.css         --avatar-offset
   各种颜色                        src/styles/global.css         :root 里的颜色变量
-  顶部四个按钮                    src/layouts/BaseLayout.astro  navItems
+  顶部五个按钮                    src/layouts/BaseLayout.astro  navItems
 
   文章模板                        new-article.mjs               buildTemplate
   动态模板                        new-thought.mjs               buildTemplate
+  推荐模板                        new-recommend.mjs             buildTemplate
+  推荐的板块（标题 / 顺序）       src/data/recommend.ts         recommendCategories
   标签写法（分隔符等）            new-tag.mjs                   formatTags
   APlayer 外观覆盖                src/styles/global.css        搜「APlayer」
   首次交互后播放的逻辑            src/components/MetingPlayer.astro  底部 script
@@ -90,16 +93,25 @@
 用编辑器打开它，会看到这样一段（约在第 38 行开始）：
 
     export const site = {
-      title: 'TAKINA',                  <-- 改这里：网站名字
-      description: '记录随时的想法…',   <-- 改这里：网站简介
-      author: '夜羽',                   <-- 改这里：你的名字
-      avatar: '/avatar.svg',            <-- 改这里：头像文件
-      tagline: '热爱二次元与前端的…',   <-- 改这里：头像下方的签名
-      url: 'https://example.com',       <-- 改这里：你的域名
+      title: '风の道標',                <-- 改这里：网站名字
+      description: '学习和生活记录',    <-- 改这里：网站简介
+      author: 'TAKINA',                 <-- 改这里：头像下方显示的名字
+      avatar: '/touxiang.jpg',          <-- 改这里：头像文件
+      tagline: '学艺不精的CS学生',       <-- 改这里：头像下方的签名
+      url: 'https://inouetakina.cn',    <-- 改这里：你的域名
       launched: '2026-09-27',           <-- 改这里：建站日期
       since: 2026,                      <-- 改这里：页脚版权起始年
       pageSize: 0,
     } as const;
+
+【容易搞混的两个】
+
+    title   = 网站名字。只出现在浏览器标签页 / RSS / 分享卡片上，
+              侧边栏不显示它。
+    author  = 你的名字。显示在侧边栏头像正下方，页脚版权也用这个。
+
+  两个不一样是正常的 —— 比如现在：标签页显示「风の道標」，
+  头像下方显示「TAKINA」。想改头像下面那行字，改的是 author，不是 title。
 
 改的时候注意：引号别删，中英文标点别混用，每行末尾要有逗号。
 
@@ -228,7 +240,7 @@ icon 支持这些：
 
 
 ====================================================================
-3. 上传文章和动态
+3. 上传内容（文章 / 动态 / 推荐）
 ====================================================================
 
 文章和动态共用同一套机制，都是「一个 .md 文件 = 一条内容」，
@@ -264,16 +276,19 @@ src/content/posts/ 里生成好文件，并打印出本地预览网址。
 
     npm run thought -- --title "买了个新键盘" --tags "日常,外设"
 
-两个脚本的参数完全一样：
+文章和动态这两个脚本的参数完全一样：
 
     --title       标题（必填。不写就会问你）
     --slug        文件名 / 网址最后一段。不写就根据标题自动生成
     --tags        标签，逗号分隔
     --description 摘要
-    --publish     直接发布。不加的话默认是草稿（draft: true）
+    --draft       存成草稿（不写就是直接发布）
 
-【默认是草稿】刚建出来的文件里写着 `draft: true`，只有你本地 npm run dev
-能看到，正式构建时会跳过。写完要发布时，把它改成 `draft: false`。
+【默认直接发布】刚建出来的文件里写着 `draft: false`，写完 commit + push
+它就会出现在网站上，不用再去改什么。
+
+【想先存成草稿】加 --draft。文件里会写成 `draft: true`，这种只有本地
+npm run dev 能看到，正式构建时会跳过。写完了把它改成 `draft: false` 即可。
 
 【一定要保留 draft: 这几个字】常见的错误写法是只留一个 false：
 
@@ -377,13 +392,13 @@ tags: [前端, CSS]，网站就会自动：
 
 --- 3.5 写作流程建议 -----------------------------------------------
 
-  1. 建文件：文章用 npm run article，动态用 npm run thought
-     （默认 draft: true，不会被发布）
-  2. 在 src/content/posts/ 里打开它写正文，npm run dev 随时预览
-  3. 写完后把 draft: true 改成 draft: false（保留 draft: 这几个字，
-     不要只留一个 false，否则 frontmatter 会变成非法 YAML，整个构建都会失败）
-  4. 需要的话用 npm run tag 补标签
-  5. npm run build 构建并部署
+  1. 建文件：文章用 npm run article，动态用 npm run thought，推荐用 npm run recommend
+  2. 在 src/content/ 里打开它写正文，npm run dev 随时预览
+  3. 需要的话用 npm run tag 补标签（文章 / 动态）
+  4. commit + push，GitHub Actions 会自动构建并部署
+
+  脚本新建的文件默认就是发布的（draft: false），不用手动改。
+  想先放草稿，建的时候加 --draft。
 
 
 --- 3.6 用脚本管理标签 ---------------------------------------------
@@ -426,6 +441,117 @@ tags: [前端, CSS]，网站就会自动：
     npm run tag -- --post 文章A,动态B --tags "草稿" --remove
 
 这个脚本只动 frontmatter 里的 tags: 那一行，正文和其它字段不受影响。
+
+
+--- 3.7 上传推荐（书 / 动漫） ---------------------------------------
+
+「推荐」是顶部导航的第五个按钮，网址 /recommend/。
+
+一共有四个板块，写在 frontmatter 的 category: 里：
+
+    book-reading       最近在读的书
+    anime-watching     最近在看的动漫
+    anime-recommend    推荐的动漫
+    book-recommend     推荐的书
+
+【新建一条】跑：
+
+    npm run recommend
+
+会依次问你：名称、板块、作者、短评、两个百科链接。也可以一行写全：
+
+    npm run recommend -- --title "夏日重现" --category anime-recommend ^
+      --author "田中靖規 / OLM" --note "时间循环题材里最爱的一部" ^
+      --moegirl "https://zh.moegirl.org.cn/夏日重现" ^
+      --baike "https://baike.baidu.com/item/夏日重现"
+
+参数：
+    --title     名称（必填，书名 / 番名）
+    --category  板块，见上面的四个取值
+    --author    作者 / 原作 / 制作公司
+    --note      一句话短评（显示在卡片上）
+    --cover     封面图。填文件名（xxx.jpg）或路径（/covers/xxx.jpg）都行，
+                只填文件名会自动补成 /covers/xxx.jpg
+    --moegirl   萌娘百科链接（自动加一条「萌娘百科」）
+    --baike     百度百科链接（自动加一条「百度百科」）
+    --slug      文件名 / 网址最后一段
+    --draft     存成草稿（不写就是直接发布）
+
+生成的文件在 src/content/recommend/ 下，文件名就是网址最后一段
+（夏日重现.md → /recommend/夏日重现/）。
+
+【文件名里的标点会被规范化】汉字会原样保留，但某些标点会被换成短横。
+比如
+
+    チ。-地球の運動について.md
+
+的网址是 /recommend/チ-地球の運動について/ —— 那个「。」变成了「-」。
+想知道某一条的真实网址，最稳的办法是在开发服务器里点卡片进去，
+直接看浏览器地址栏。
+
+【frontmatter 长这样】
+
+    ---
+    title: 夏日重现
+    category: anime-recommend
+    author: 田中靖規 / OLM
+    note: 时间循环题材里最爱的一部
+    cover: /covers/summer-time-rendering.jpg
+    links:
+      - label: 萌娘百科
+        url: https://zh.moegirl.org.cn/夏日重现
+      - label: 百度百科
+        url: https://baike.baidu.com/item/夏日重现
+    date: 2026-09-27
+    draft: false
+    ---
+
+    正文直接从这一行开始写。脚本生成的文件这里是空的，
+    不会塞「正文从这里开始」之类的占位文字（那些会真的显示在网站上）。
+
+  只有 title 和 category 是必填的，其它都可以不写。
+  【注意】category 写错会直接报错（报错里会列出四个合法取值），
+         因为它决定这条出现在推荐页的哪个板块。
+
+【封面图】
+  图片统一放在 public/covers/ 文件夹里，然后 frontmatter 写：
+
+      cover: /covers/图片文件名
+
+  【最省事的做法】跑 npm run recommend 的时候，脚本会把 public/covers/
+  里已有的图片列出来，你直接填序号就行：
+
+      封面图（public/covers/ 里已有的图片）：
+        1) ゼロから始める異世界生活.jpg
+        2) 地。-关于地球的运动-.jpg
+        0) 不加封面
+      选序号或填文件名（可留空）：
+
+  一行命令的话，--cover 只写文件名也会自动补上 /covers/：
+
+      npm run recommend -- --title "无职转生" --cover "無職転生-～異世界行ったら本気だす～.jpg"
+
+  不写封面也能跑 —— 卡片上会显示名称的第一个字。
+
+  【提醒】图片建议自己下载后放进 public/covers/，不要直接填别人的图片网址：
+         一是对方哪天删了你的页面就裂了，二是版权上有风险。
+
+【参考链接】
+  links 里可以写任意多条，label 随便起（百度百科、萌娘百科、豆瓣……）。
+  详情页会把它们显示成一排按钮，前面写着「内容参考」。
+
+【想加一个新板块】
+  比如「推荐的漫画」，改两个地方：
+    1. src/data/recommend.ts
+         在 RECOMMEND_CATEGORIES 里加一个取值
+         在 recommendCategories 里补上它的 label 和 eyebrow
+         板块的排列顺序 = 这里书写的顺序
+    2. new-recommend.mjs
+         在 CATEGORIES 里同步加一条（为了交互式提示能列出来）
+
+  【板块说明是可选的】如果想在标题下面再加一句话说明，
+  在 recommendCategories 里给那个板块写一行 desc 就会显示出来，
+  不写就不显示（现在四个板块都没写）。
 
 
 ====================================================================
@@ -847,6 +973,16 @@ A: 分两种情况：
 
    两种情况的共同点：先跑 npm run build 看看。如果构建成功，
    说明文件本身没问题；如果构建报错，那就是文件写错了，按报错改。
+
+Q: 推荐页上的某一条不见了？
+A: 两个常见原因：
+   1) category: 写错了。它只能填 book-reading / anime-watching /
+      anime-recommend / book-recommend 四个之一。跑 npm run build，
+      报错信息会直接列出这四个取值，照着改就行。
+   2) draft: true 忘了改成 false。
+
+   另外，某条上了正文却看不到封面图，多半是 cover: 的路径写错了。
+   图片要真的放在 public/ 里，路径要和文件名完全一致（区分大小写）。
 
 Q: 文章和动态的网址为什么不一样？
 A: 文章在 /posts/ 下面，动态在 /thoughts/ 下面，两个分区完全独立、

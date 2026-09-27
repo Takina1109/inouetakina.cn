@@ -12,14 +12,13 @@ const posts = await getPosts();
 const thoughts = posts.filter((p) => p.data.type === 'thought');
 ---
 
-<BaseLayout title="动态" description="随手记下的想法和日常">
+<BaseLayout title="風の便り" description="随手记下的想法和日常">
   <Fragment slot="hero">
     <header class="page-head">
       <p class="page-head__eyebrow">Thoughts</p>
       <h1 class="page-head__title">动态</h1>
       <p class="page-head__desc">
-        随手记下的想法、看番的感想、生活里的一点观察 —— 共 {thoughts.length} 条。技术文章在
-        <a href="/posts/">文章</a>里。
+        随手记下的想法、看番的感想、生活里的一点观察 —— 共 {thoughts.length} 条。
       </p>
     </header>
   </Fragment>

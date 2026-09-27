@@ -12,7 +12,14 @@ interface Props {
 }
 
 const { title, description = site.description } = Astro.props;
-const pageTitle = title ? `${title} · ${site.title}` : `${site.title} · 随想与技术笔记`;
+/*
+ * 浏览器标签页上的标题：就是页面自己的名字，不再拼站点名。
+ * 首页不传 title，所以显示的是 src/data/site.ts 里的 title。
+ *
+ * 想恢复「页面名 · 站点名」的形式，把下面这行换成：
+ *   const pageTitle = title ? `${title} · ${site.title}` : site.title;
+ */
+const pageTitle = title || site.title;
 
 /* 全站共享数据：内容列表 / 搜索索引 / 热力图 / 站点统计 */
 const posts = await getPosts();
@@ -24,11 +31,12 @@ const stats = buildStats(posts);
 const path = Astro.url.pathname;
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 
-/* 顶部主导航：主页 / 文章 / 动态 / 标签 */
+/* 顶部主导航：主页 / 文章 / 动态 / 推荐 / 标签 */
 const navIcons = {
   home: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
   post: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-5 14H7v-2h7zm3-4H7v-2h10zm0-4H7V7h10z',
   thought: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z',
+  pick: 'M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
   tag: 'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7A1.5 1.5 0 1 1 7 5.5 1.5 1.5 0 0 1 5.5 7z',
 } as const;
 
@@ -36,6 +44,7 @@ const navItems = [
   { href: '/', label: '主页', icon: navIcons.home },
   { href: '/posts/', label: '文章', icon: navIcons.post },
   { href: '/thoughts/', label: '动态', icon: navIcons.thought },
+  { href: '/recommend/', label: '推荐', icon: navIcons.pick },
   { href: '/tags/', label: '标签', icon: navIcons.tag },
 ];
 ---

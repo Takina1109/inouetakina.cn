@@ -17,7 +17,7 @@
  *   --slug        文件名 / 网址最后一段。不写就根据标题自动生成
  *   --tags        标签，逗号分隔
  *   --description 摘要
- *   --publish     直接发布。不加的话默认 draft: true（只有本地能看到）
+ *   --draft       存成草稿（不写就是直接发布）
  *
  * 生成的文件会放在 src/content/posts/ 下，网址是 /posts/文件名/
  * 动态请用另一个脚本：npm run thought
@@ -93,7 +93,7 @@ function normalizeTags(input) {
 }
 
 /** 文章的 Markdown 模板 */
-function buildTemplate({ title, description, tags, published }) {
+function buildTemplate({ title, description, tags, draft }) {
   const lines = [
     '---',
     `title: ${title}`,
@@ -102,7 +102,7 @@ function buildTemplate({ title, description, tags, published }) {
     `date: ${todayISO()}`,
     'type: tech',
     `tags: [${tags.join(', ')}]`,
-    `draft: ${published ? 'false' : 'true'}`,
+    `draft: ${draft ? 'true' : 'false'}`,
     '---',
     '',
   ];
@@ -110,7 +110,7 @@ function buildTemplate({ title, description, tags, published }) {
   /* 提示一律用 HTML 注释写：万一忘了删，它也不会显示在网站上 */
   const notes = [];
 
-  if (!published) {
+  if (draft) {
     notes.push(
       '这是一篇草稿：只有本地 npm run dev 能看到，npm run build 时会跳过它。',
       '',
@@ -189,24 +189,26 @@ async function main() {
     const answer = await ask(`文件名 / 网址（回车用默认值）[${slug}]：`);
     if (answer) slug = uniqueSlug(slugify(answer));
 
-    const published = Boolean(args.publish);
+    const draft = Boolean(args.draft);
     const filePath = path.join(POSTS_DIR, `${slug}.md`);
 
     await mkdir(POSTS_DIR, { recursive: true });
     await writeFile(
       filePath,
-      buildTemplate({ title, description, tags, published }),
+      buildTemplate({ title, description, tags, draft }),
       'utf8'
     );
 
     console.log(`\n✓ 已创建 ${path.relative(ROOT, filePath)}`);
     console.log(`  本地预览：http://localhost:4321/posts/${slug}/`);
-    if (!published) {
+    if (draft) {
       console.log('  当前是草稿：只有本地 npm run dev 能看到，构建时会跳过。');
       console.log('  写完把 frontmatter 里的 draft: true 改成 draft: false 才会发布，');
       console.log('  注意 draft: 这几个字要保留，不要只写一个 false。');
+      console.log('  发布：npm run build，然后把 dist/ 部署上去，或 push 触发自动部署。\n');
+    } else {
+      console.log('  已经是发布状态（draft: false），commit + push 之后就会出现在网站上。\n');
     }
-    console.log('  发布：npm run build，然后把 dist/ 部署上去，或在平台上 push 触发自动部署。\n');
   } finally {
     rl?.close();
   }

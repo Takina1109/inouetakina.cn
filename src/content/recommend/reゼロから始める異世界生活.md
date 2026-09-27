@@ -1,0 +1,37 @@
+---
+title: Re:ゼロから始める異世界生活
+category: anime-watching
+author: 长月达平
+date: 2026-09-27
+draft: false
+cover: /covers/ゼロから始める異世界生活.jpg
+---
+
+<!--
+  这是一条草稿：只有本地 npm run dev 能看到，npm run build 时会跳过它。
+
+  写完发布时，把上面 frontmatter 里的这一行：
+
+      draft: true
+
+  改成这样（draft: 这几个字要保留，不要只写一个 false）：
+
+      draft: false
+
+  想加封面图：把图片放进 public/ 文件夹（比如 public/covers/xxx.jpg），
+  然后在 frontmatter 里加一行：
+
+      cover: /covers/xxx.jpg
+
+  不写也行，卡片上会显示名称的第一个字。
+
+  想加参考链接（萌娘百科 / 百度百科），在 frontmatter 里加：
+
+      links:
+        - label: 萌娘百科
+          url: https://zh.moegirl.org.cn/xxx
+        - label: 百度百科
+          url: https://baike.baidu.com/item/xxx
+
+  下面这段是注释，不会显示在网站上，忘了删也没关系。
+-->

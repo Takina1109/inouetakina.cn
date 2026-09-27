@@ -21,15 +21,12 @@ const tags = [...tagCounts.entries()]
   .map(([tag]) => tag);
 ---
 
-<BaseLayout title="文章" description="技术写作与踩坑记录">
+<BaseLayout title="航跡雲" description="技术写作与踩坑记录">
   <Fragment slot="hero">
     <header class="page-head">
       <p class="page-head__eyebrow">Articles</p>
       <h1 class="page-head__title">文章</h1>
-      <p class="page-head__desc">
-        技术写作、踩坑记录、源码笔记 —— 共 {articles.length} 篇。日常的碎碎念在
-        <a href="/thoughts/">动态</a>里。
-      </p>
+      <p class="page-head__desc">技术写作、踩坑记录、源码笔记 —— 共 {articles.length} 篇。</p>
     </header>
   </Fragment>
 
@@ -55,9 +52,7 @@ const tags = [...tagCounts.entries()]
         ))}
       </ul>
     ) : (
-      <p class="empty-state">
-        还没有文章。新建时把 frontmatter 里的 <code>type</code> 写成 <code>tech</code> 就会出现在这里 ✎
-      </p>
+      <p class="empty-state">还没有文章</p>
     )
   }
 </BaseLayout>

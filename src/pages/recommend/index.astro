@@ -1,0 +1,53 @@
+---
+/**
+ * 推荐列表：/recommend/
+ * 顶部导航「推荐」按钮指向这里。
+ * 按 category 分成四个板块：最近在读的书 / 最近在看的动漫 / 推荐的动漫 / 推荐的书。
+ * 板块顺序和标题写在 src/data/recommend.ts。
+ */
+import PickCard from '@/components/PickCard.astro';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { getPicks, groupPicks } from '@/lib/recommend';
+
+const picks = await getPicks();
+const groups = groupPicks(picks);
+---
+
+<BaseLayout title="沿途の風景" description="最近在读的书、在看的动漫，以及想推荐给你的书和番">
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">Picks</p>
+      <h1 class="page-head__title">推荐</h1>
+      <p class="page-head__desc">
+        最近在读的书、在看的动漫，以及想推荐给你的书和番 —— 共 {picks.length} 条。
+      </p>
+    </header>
+  </Fragment>
+
+  {
+    groups.length > 0 ? (
+      groups.map((group) => (
+        <section class="pick-section">
+          <div class="pick-section__head">
+            <h2 class="pick-section__title">{group.label}</h2>
+            <span class="pick-section__eyebrow">{group.eyebrow}</span>
+            <span class="pick-section__count">{group.items.length} 条</span>
+          </div>
+          {group.desc && <p class="pick-section__desc">{group.desc}</p>}
+
+          <ul class="pick-grid">
+            {group.items.map((pick) => (
+              <li>
+                <PickCard pick={pick} />
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))
+    ) : (
+      <p class="empty-state">
+        还没有推荐内容。用 <code>npm run recommend</code> 新建一条，就会出现在这里 ✎
+      </p>
+    )
+  }
+</BaseLayout>

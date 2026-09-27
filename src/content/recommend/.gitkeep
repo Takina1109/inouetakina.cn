@@ -1,0 +1,6 @@
+# 这个文件只是为了让 Git 保留这个空文件夹，可以删。
+#
+# 推荐内容放在这里，一个文件一条：
+#   src/content/recommend/夏日重现.md   ->  /recommend/夏日重现/
+#
+# 新建用 `npm run recommend`，它会帮你把 frontmatter 写对。

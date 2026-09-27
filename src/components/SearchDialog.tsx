@@ -192,7 +192,6 @@ export default function SearchDialog({ items, recentLimit = 12 }: Props) {
           <path d="m20 20-3.5-3.5" strokeLinecap="round" />
         </svg>
         <span className="search-trigger__text">搜索随想 / 技术 / 标签…</span>
-        <kbd>Ctrl K</kbd>
       </button>
 
       {open && (

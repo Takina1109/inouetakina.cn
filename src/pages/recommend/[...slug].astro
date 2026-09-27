@@ -1,0 +1,88 @@
+---
+/**
+ * 推荐详情页：/recommend/<文件名>/
+ * 正文就是你自己粘进来的萌娘百科 / 百度百科内容。
+ */
+import { render } from 'astro:content';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { recommendCategories } from '@/data/recommend';
+import { formatDate } from '@/lib/posts';
+import { getPicks, type Pick } from '@/lib/recommend';
+
+export async function getStaticPaths() {
+  const picks = await getPicks();
+  return picks.map((pick: Pick) => ({
+    params: { slug: pick.id },
+    props: { pick },
+  }));
+}
+
+const { pick } = Astro.props;
+const { data } = pick;
+const { Content } = await render(pick);
+
+const category = recommendCategories[data.category];
+/* 封面 / 短评 / 参考链接全都没有时，就不渲染上面那一条信息栏 */
+const hasIntro = Boolean(data.cover || data.note || data.links.length > 0);
+---
+
+<BaseLayout title={data.title} description={data.note || data.title}>
+  <Fragment slot="hero">
+    <header class="page-head">
+      <p class="page-head__eyebrow">
+        {category.label} · {category.eyebrow}
+      </p>
+      <h1 class="page-head__title article__title">{data.title}</h1>
+
+      <div class="article__meta">
+        {data.author && <span class="article__meta-item">{data.author}</span>}
+        {
+          data.date && (
+            <span class="article__meta-item">
+              <time datetime={formatDate(data.date)}>收录于 {formatDate(data.date)}</time>
+            </span>
+          )
+        }
+      </div>
+    </header>
+  </Fragment>
+
+  <article class="article">
+    {
+      hasIntro && (
+        <div class="pick-detail">
+          {data.cover && (
+            <div
+              class="pick-detail__cover"
+              style={`background-image: url('${data.cover}')`}
+              aria-hidden="true"
+            />
+          )}
+
+          <div class="pick-detail__meta">
+            {data.note && <p class="pick-detail__note">{data.note}</p>}
+
+            {data.links.length > 0 && (
+              <div class="pick-detail__links">
+                <span class="pick-detail__links-label">内容参考</span>
+                {data.links.map((link) => (
+                  <a class="chip" href={link.url} target="_blank" rel="noopener noreferrer">
+                    {link.label} ↗
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <footer class="article-footer">
+      <a class="intro__more" href="/recommend/">← 全部推荐</a>
+    </footer>
+  </article>
+</BaseLayout>
