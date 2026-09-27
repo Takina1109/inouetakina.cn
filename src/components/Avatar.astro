@@ -1,5 +1,18 @@
 ---
 import { site } from '@/data/site';
+
+/*
+ * 签名档会随机轮播，内容在 src/data/site.ts 的 site.taglines 里改。
+ *
+ * 这里没有用「JS 换掉 <p> 里的文字」那种写法，而是把每一条都渲染出来、
+ * 叠在同一格里（CSS 见 global.css 的 .brand__tagline）。好处是：
+ *   1. 这块的高度永远按最长的那条算，轮播时不会把下面的社交图标顶来顶去
+ *   2. 淡出和淡入同时发生，比「先消失、再出现」自然
+ * 没跑 JS 的时候只会静态显示第一条。
+ *
+ * 只有一条的时候脚本会直接退出，不做任何轮播。
+ */
+const taglines = site.taglines;
 ---
 
 <div class="avatar-block">
@@ -11,6 +24,62 @@ import { site } from '@/data/site';
 
   <div>
     <a class="brand__name" href="/" title="返回主页">{site.author}</a>
-    <p class="brand__tagline">{site.tagline}</p>
+    <p class="brand__tagline">
+      {taglines.map((text, i) => (
+        <span class="brand__tagline__item" aria-hidden={i === 0 ? undefined : 'true'}>{text}</span>
+      ))}
+    </p>
   </div>
 </div>
+
+<script is:inline>
+  (function () {
+    var el = document.querySelector('.brand__tagline');
+    if (!el) return;
+
+    var items = el.querySelectorAll('.brand__tagline__item');
+    if (items.length < 2) return; // 只有一条，不用轮播
+
+    // 系统里开了「减少动态效果」就只静着显示，不轮播
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    var HOLD = 4000; // 每条停留多久（毫秒）
+    var FADE = 700; // 淡入淡出时长，要跟 CSS 里那句 transition 保持一致
+    var timer = 0;
+
+    // 一进来就随机挑一条，不用固定从第一条开始
+    var index = Math.floor(Math.random() * items.length);
+
+    function show(k) {
+      for (var i = 0; i < items.length; i++) {
+        items[i].classList.toggle('is-active', i === k);
+        // 只让看得见的那条被读屏软件读到
+        if (i === k) items[i].removeAttribute('aria-hidden');
+        else items[i].setAttribute('aria-hidden', 'true');
+      }
+    }
+
+    function schedule() {
+      clearTimeout(timer);
+      timer = setTimeout(swap, HOLD);
+    }
+
+    function swap() {
+      // 随机换一条：偏移量取 1 ~ 长度-1，所以绝不会跟当前这条重复
+      index = (index + 1 + Math.floor(Math.random() * (items.length - 1))) % items.length;
+      show(index);
+      schedule();
+    }
+
+    // 先让 CSS 知道「脚本接管了」，再决定显示哪条（否则第一条的默认样式会抢）
+    el.classList.add('is-live');
+    show(index);
+    schedule();
+
+    // 切到别的标签页时先停住，回来接着轮播
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) clearTimeout(timer);
+      else schedule();
+    });
+  })();
+</script>

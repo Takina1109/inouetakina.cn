@@ -449,11 +449,35 @@ a.brand__name:hover {
   opacity: 0.6;
 }
 
+/* 签名档：内容是 src/data/site.ts 里的 site.taglines，会随机轮播。
+   这里用 grid 把所有条目叠在同一格里，所以这块的高度永远按最长的那条算，
+   轮换时不会把下面的社交图标和导航顶来顶去。 */
 .brand__tagline {
+  display: grid;
   margin: 0;
   font-size: 0.82rem;
   color: var(--text-muted);
   line-height: 1.6;
+}
+
+.brand__tagline__item {
+  grid-area: 1 / 1; /* 全部叠在同一格 */
+  opacity: 0;
+  transition: opacity 0.7s var(--ease);
+}
+
+/* 没有 JS 时（或只有一条）只显示第一条 */
+.brand__tagline__item:first-child {
+  opacity: 1;
+}
+
+/* 脚本接管后，改由 .is-active 决定显示哪一条 */
+.brand__tagline.is-live .brand__tagline__item {
+  opacity: 0;
+}
+
+.brand__tagline.is-live .brand__tagline__item.is-active {
+  opacity: 1;
 }
 
 /* ---------------------------- 侧边栏：社交链接 ---------------------------- */

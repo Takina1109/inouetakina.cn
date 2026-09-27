@@ -49,7 +49,7 @@
   网站名字（标签页 / RSS）        src/data/site.ts              title
   头像                            src/data/site.ts              avatar
   头像下面显示的名字              src/data/site.ts              author
-  头像下面的签名                  src/data/site.ts              tagline
+  头像下面的签名（轮播）        src/data/site.ts              taglines
   网站简介（搜索引擎用）          src/data/site.ts              description
   页脚版权年份                    src/data/site.ts              since
   建站时间（侧边栏那张表）        src/data/site.ts              launched
@@ -98,12 +98,29 @@
       description: '学习和生活记录',    <-- 改这里：网站简介
       author: 'TAKINA',                 <-- 改这里：头像下方显示的名字
       avatar: '/touxiang.jpg',          <-- 改这里：头像文件
-      tagline: '学艺不精的CS学生',       <-- 改这里：头像下方的签名
+      taglines: [                       <-- 改这里：头像下方的签名（会轮播）
+        '学艺不精的CS学生',
+        '写代码，也写字',
+      ],
       url: 'https://inouetakina.cn',    <-- 改这里：你的域名
       launched: '2026-09-27',           <-- 改这里：建站日期
       since: 2026,                      <-- 改这里：页脚版权起始年
       pageSize: 0,
     } as const;
+
+【签名会自己轮播】taglines 是个数组（就是中括号里的那串金句），放几条都行。
+头像下面每次随机亮一条，每隔几秒换一条，换的时候有淡入淡出。
+
+  只有一条       → 不轮播，就静态显示那一条
+  换几条、换文字 → 直接改 taglines 数组
+  改停留时长     → src/components/Avatar.astro 底部脚本里的 HOLD
+  改淡入淡出快慢 → 同一个地方改 FADE（要和 global.css 里的数值一致）
+  改字体/颜色    → src/styles/global.css 搜 brand__tagline
+  想关掉轮播     → 只留一条；或者系统里开「减少动态效果」，
+                   这时就不轮播了，静着显示第一条
+
+一个注意点：这块占的高度是按最长的那条算的 —— 这样换的时候下面的社交
+图标不会被顶得上下跳。所以别写太长，否则下面会空出一截。
 
 【容易搞混的两个】
 
@@ -896,7 +913,7 @@ src/content/posts/ 里原来有 9 篇演示用的文章和动态，现在已经�
   - src/data/site.ts 的 meting.id：示例歌单（网易云飙升榜），换成你的
   - src/data/site.ts 的 meting.api：现在指向自己部署的 api.inouetakina.cn，
     没有这层关系的人拿到这份代码，要换成自己的（见 4.3 节）
-  - src/data/site.ts 的 site：title / author / tagline / url / launched
+  - src/data/site.ts 的 site：title / author / taglines / url / launched
   - src/data/site.ts 的 socials：GitHub / B 站 / 网易云的链接
   - src/content/about/index.md：示例自我介绍
   - public/avatar.svg：示例头像（换成自己的图，并改 site.ts 的 avatar）
