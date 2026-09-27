@@ -54,16 +54,18 @@ import { meting } from '@/data/site';
     mini="false"
   ></meting-js>
 
-  {/* 歌单拉不到时（通常是 Meting API 挂了）才显示 */}
+  {/*
+    歌单拉不到时才显示。
+    访客看到的就一句「歌单加载失败」—— 排障信息放在这里给维护的人看：
+    公开的 Meting API 大多有每日请求次数上限（用超了会返回 200 +
+    {"message":"请求次数已达上限"}，MetingJS 拿不到歌单就初始化不出播放器）。
+    想稳定，得自己部署一个 API，见 使用说明.txt 第 4 节。
+  */}
   <p class="meting-error" data-meting-error hidden>
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M12 2 1 21h22zm0 6 6.5 11h-13zM11 10h2v5h-2zm0 6h2v2h-2z" />
     </svg>
-    <span>
-      歌单加载失败 —— 多半是所用的 Meting API 暂时不可用。可以在
-      <code>src/data/site.ts</code> 里把 <code>meting.api</code> 换成自己部署的地址（见
-      <code>使用说明.txt</code> 第 4 节）。
-    </span>
+    <span>歌单加载失败</span>
   </p>
 </div>
 

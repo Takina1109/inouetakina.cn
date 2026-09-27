@@ -163,19 +163,46 @@ export const meting = {
    * Meting API 地址。
    *
    * MetingJS 自己不会解析歌单，它需要一个 API 服务把「歌单 ID」换成
-   * 「可播放的音频地址 + 封面 + 歌词」。下面这个是第三方公共实例
-   * （写这份配置时可用），公共实例随时可能挂掉或被限流。
+   * 「可播放的音频地址 + 封面 + 歌词」。
    *
-   * 长期使用建议自己部署一个（免费、十几分钟搞定），然后把地址换到这里：
+   * 【现在用的是自己部署的那台】
+   *   https://api.inouetakina.cn/api
+   * 做法：fork https://github.com/xizeyoupan/Meting-API 到 Vercel，然后在
+   * Vercel 里把这个子域名绑给那个项目（DNS 加一条 CNAME 就行）。
+   * 免费额度完全够用；闲置一阵子后第一次请求要一两秒冷启动，之后很快。
+   * 完整步骤见 使用说明.txt 的 4.3。
+   *
+   * 【为什么不再用公共实例】都不靠谱，下面是实测结果（留作备查）：
+   *     api.injahow.cn   有每日请求次数上限。用超了会返回 200 +
+   *                      {"message":"请求次数已达上限，请明天再试"}，
+   *                      一整天都拉不到歌单；换出口 IP 也一样，是服务端限制
+   *     api.i-meto.com   403（MetingJS 官方文档里写的默认地址，早就废了）
+   *     meting.qjqq.cn   522
+   *     api.kuleu.com    超时
+   *     api.qijieya.cn   实测可用，支持跨域 ← 自己那台万一挂了可以临时改回它
+   *
+   * 【为什么一失败播放器就整个不见了】MetingJS 只有在拿到合法歌单时才会
+   * 创建 APlayer。API 返回一个错误对象（而不是歌单数组）时它什么都不做，
+   * 页面上就是空的一块，所以 MetingPlayer.astro 里加了轮询提示。
+   *
+   * 【想再部署一台备用】可选的现成方案：
+   *   - https://github.com/xizeyoupan/Meting-API 支持 Vercel / Cloudflare（就是现在用的）
    *   - https://github.com/injahow/meting-api    Node 版，可一键部署到 Vercel
    *   - https://github.com/metowolf/Meting       PHP 版，丢到任意 PHP 空间
-   *   - https://github.com/xizeyoupan/Meting-API 支持 Vercel / Cloudflare
    *
-   * 自部署后的地址一般形如：
+   * 自部署后的地址形如：
    *   https://你的域名/api?server=:server&type=:type&id=:id
    * 注意 :server / :type / :id 这三个占位符要原样保留，MetingJS 会自己替换。
+   *
+   * 【换实例的方法】只改下面这行的域名，后面 ?server=... 原样保留。
+   * 最省事的验证方式：直接跑 npm run check-api —— 它会读出下面这行的地址
+   * 请求一次，然后告诉你成功还是失败、失败原因是什么、返回了多少首歌。
+   * 手动验证也行（把 歌单ID 换成你的，在浏览器里打开）：
+   *   https://新域名/api?server=netease&type=playlist&id=歌单ID
+   *   → 正常会返回一大串 JSON（几十 KB）；只有一两百字节的错误信息就是不行。
+   * 另外响应头必须带 Access-Control-Allow-Origin（跨域），否则浏览器会拦掉。
    */
-  api: 'https://api.injahow.cn/meting/?server=:server&type=:type&id=:id',
+  api: 'https://api.inouetakina.cn/api?server=:server&type=:type&id=:id',
 
   /** 播放顺序：random = 随机播放（默认，符合需求），list = 按歌单顺序 */
   order: 'random',

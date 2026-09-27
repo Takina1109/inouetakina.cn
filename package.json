@@ -12,7 +12,8 @@
     "article": "node new-article.mjs",
     "thought": "node new-thought.mjs",
     "recommend": "node new-recommend.mjs",
-    "tag": "node new-tag.mjs"
+    "tag": "node new-tag.mjs",
+    "check-api": "node check-meting-api.mjs"
   },
   "keywords": [],
   "author": "",
