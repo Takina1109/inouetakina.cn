@@ -62,11 +62,10 @@
   --shadow-2: 0 14px 40px rgba(0, 0, 0, 0.6);
   --glow: 0 0 0 4px rgba(255, 255, 255, 0.08);
 
+  /* 热力图三档：0 = 没上传过，1 = 上传过一篇，2 = 上传过一篇以上 */
   --heat-0: rgba(255, 255, 255, 0.07);
-  --heat-1: #303030;
-  --heat-2: #5c5c5c;
-  --heat-3: #949494;
-  --heat-4: #f2f2f2;
+  --heat-1: #8a8a8a;
+  --heat-2: #f2f2f2;
 }
 
 /* ---------------------------- 重置 ---------------------------- */
@@ -1195,12 +1194,6 @@ meting-js {
 }
 .heatmap__cell[data-level='2'] {
   background: var(--heat-2);
-}
-.heatmap__cell[data-level='3'] {
-  background: var(--heat-3);
-}
-.heatmap__cell[data-level='4'] {
-  background: var(--heat-4);
 }
 
 .heatmap__cell[data-level]:not([data-level='0']) {

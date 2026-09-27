@@ -13,14 +13,41 @@ interface Tip {
 
 const WEEKDAYS = ['日', '一', '二', '三', '四', '五', '六'];
 
+/** 三档颜色对应的说明，图例的提示文字用 */
+const LEVEL_LABELS = ['没上传过', '上传过一篇', '上传过一篇以上'];
+
 function formatCN(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${y} 年 ${Number(m)} 月 ${Number(d)} 日`;
 }
 
+/** 用访客自己的本地时间算出 YYYY-MM-DD */
+function todayISO(): string {
+  const now = new Date();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${m}-${d}`;
+}
+
 export default function Heatmap({ data }: Props) {
   const [tip, setTip] = useState<Tip | null>(null);
+  /*
+   * 「今天」的白框必须在浏览器里算，不能构建时烘进 HTML。
+   *
+   * 原来是在构建时用 new Date() 算好写死在页面里的，有两个毛病：
+   *   1. 构建机（GitHub Actions）跑在 UTC，比本地早 8 小时，
+   *      所以本地明明是 27 号，线上的白框却永远框在 26 号；
+   *   2. 静态页面里的日期是死的，站点不重新部署就一直停在旧日期。
+   *
+   * 初始值必须是 null：服务端没有「当前时间」这个概念，
+   * 先渲染成没有白框、加载完再由浏览器补上，就不会 hydration mismatch。
+   */
+  const [today, setToday] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    setToday(todayISO());
+  }, []);
 
   /* 一年的格子比侧边栏宽，默认滚到最右边（最近的日期），并隐藏提示 */
   useEffect(() => {
@@ -65,7 +92,7 @@ export default function Heatmap({ data }: Props) {
                 );
               }
 
-              const className = ['heatmap__cell', day.isToday ? 'heatmap__cell--today' : '']
+              const className = ['heatmap__cell', day.date === today ? 'heatmap__cell--today' : '']
                 .filter(Boolean)
                 .join(' ');
 
@@ -108,9 +135,10 @@ export default function Heatmap({ data }: Props) {
         </span>
         <span className="heatmap__legend">
           少
-          {[0, 1, 2, 3, 4].map((level) => (
+          {LEVEL_LABELS.map((label, level) => (
             <i
               key={level}
+              title={label}
               style={{
                 background: `var(--heat-${level})`,
                 border: '1px solid var(--border)',

@@ -231,10 +231,13 @@ export function buildStats(posts: Post[]): SiteStats {
 export interface HeatmapDay {
   date: string;
   count: number;
-  level: 0 | 1 | 2 | 3 | 4;
+  /**
+   * 颜色档位，只有三档：
+   *   0 = 没上传过，1 = 上传过一篇，2 = 上传过一篇以上
+   */
+  level: 0 | 1 | 2;
   /** 当天发布的文章，用于 tooltip 与跳转 */
   items: { title: string; url: string }[];
-  isToday: boolean;
 }
 
 export interface HeatmapData {
@@ -244,6 +247,7 @@ export interface HeatmapData {
   total: number;
   activeDays: number;
   maxCount: number;
+  /** 网格覆盖的日期范围（含首尾），目前没地方用到，留着备用 */
   rangeStart: string;
   rangeEnd: string;
 }
@@ -262,8 +266,6 @@ export function buildHeatmap(posts: Post[], weeks = 53): HeatmapData {
     byDate.set(key, list);
   }
 
-  const todayKey = toISODate(new Date());
-
   /*
    * 最后一格取「本周周六」。
    *
@@ -273,6 +275,10 @@ export function buildHeatmap(posts: Post[], weeks = 53): HeatmapData {
    * 窗口右边之外被整个漏掉：热力图写着「共 0 篇」，可文章明明在列表里。
    * 取 现在 和 最新一篇 里较晚的那个，就不会漏，
    * 顺便也让「日期写在未来」的文章能正常出现在热力图上。
+   *
+   * 注意：「今天」那个白框不在这里算（见 Heatmap.tsx）。
+   * 构建机上算出来的是构建那天的日期，站点不重新部署就不会变，
+   * 而且构建机是 UTC，会比本地日期早 8 小时 —— 结果是白框永远钉错一天。
    */
   const newest = posts.reduce(
     (max, post) => Math.max(max, post.data.date.getTime()),
@@ -321,9 +327,9 @@ export function buildHeatmap(posts: Post[], weeks = 53): HeatmapData {
           : {
               date: key,
               count,
-              level: Math.min(4, count) as HeatmapDay['level'],
+              /* 三档：0 = 没上传过，1 = 上传过一篇，2 = 上传过一篇以上 */
+              level: Math.min(2, count) as HeatmapDay['level'],
               items,
-              isToday: key === todayKey,
             }
       );
 
@@ -341,6 +347,6 @@ export function buildHeatmap(posts: Post[], weeks = 53): HeatmapData {
     activeDays,
     maxCount,
     rangeStart: toISODate(start),
-    rangeEnd: todayKey,
+    rangeEnd: toISODate(end),
   };
 }
