@@ -68,8 +68,9 @@
 
   侧边栏宽度                      src/styles/global.css         --sidebar-w
   侧边栏整体下移多少              src/styles/global.css         --avatar-offset
+  手机上的侧边栏抽屉              src/styles/global.css         搜「窄屏抽屉」
   各种颜色                        src/styles/global.css         :root 里的颜色变量
-  顶部五个按钮                    src/layouts/BaseLayout.astro  navItems
+  顶部四个按钮                    src/layouts/BaseLayout.astro  navItems
 
   文章模板                        new-article.mjs               buildTemplate
   动态模板                        new-thought.mjs               buildTemplate
@@ -463,7 +464,7 @@ tags: [前端, CSS]，网站就会自动：
 
 --- 3.7 上传推荐（书 / 动漫） ---------------------------------------
 
-「推荐」是顶部导航的第五个按钮，网址 /recommend/。
+「推荐」是顶部导航的第四个按钮，网址 /recommend/。
 
 一共有四个板块，写在 frontmatter 的 category: 里：
 
@@ -875,17 +876,63 @@ MetingJS 自己不会解析歌单，它需要一个「Meting API」服务，把�
       { href: '/', label: '主页', icon: navIcons.home },
       { href: '/posts/', label: '文章', icon: navIcons.post },
       { href: '/thoughts/', label: '动态', icon: navIcons.thought },
-      { href: '/tags/', label: '标签', icon: navIcons.tag },
+      { href: '/recommend/', label: '推荐', icon: navIcons.pick },
     ];
 
   - 想加一个「关于我」按钮：在方括号里加一行
         { href: '/about/', label: '关于', icon: navIcons.post },
   - 想改顺序：调整这几行的先后
   - 想改文字：改 label 的引号里的内容
-  - icon 可用的值只有 navIcons 里定义的那几个（home / post / thought / tag）；
+  - icon 可用的值只有 navIcons 里定义的那几个
+    （home / post / thought / pick）；
     想用新图标，在紧邻上面的 navIcons 里加一行 SVG 路径
 
+【顶栏上原本还有一个「标签」按钮和一个 RSS 图标，现在都删掉了】
+
+    标签  → 全部标签列在搜索弹窗里（点搜索就能看到），
+            点一下就填进搜索框；标签总览页 /tags/ 没删，
+            入口是页脚右下角那个「全部标签」文字链接
+    RSS   → 入口是页脚右下角那个「RSS」文字链接
+
+删这两个是为了让手机上的顶栏能排在一行、不用占两行高。
+
 窄屏（手机）下按钮只显示图标、不显示文字，这是自动的。
+
+【注意】手机上顶栏最左边那个 ☰ 不是导航按钮，它不在 navItems 里 ——
+它打开的是左侧边栏抽屉，见下面 5.4。
+
+
+--- 5.4 手机上的侧边栏（抽屉） --------------------------------------
+
+宽屏时左侧边栏是常驻的一列；窄到 900px 以下（手机 / 平板竖屏）时，
+它会变成一个从左边滑出的抽屉，平时藏起来，靠顶栏左上角那个 ☰ 打开。
+这么改是因为侧边栏里东西多（头像、歌单、热力图、站点信息），
+硬塞进单列布局会被拉到整个屏幕那么宽，很难看。
+
+  怎么关：点左上角 ☰；点抽屉外面那片暗色遮罩；按 Esc；
+          或点抽屉右上角的 ×
+  断点  ：900px（和 global.css 里那个 @media 一致）
+
+想调的话：
+
+  改断点     → 改 global.css 里的 @media (max-width: 900px)，
+               同时把 BaseLayout.astro 底部脚本里的 '(max-width: 900px)'
+               也改成同一个值 —— 两边必须一致，否则会错位
+  改抽屉宽度 → 同一段里的 .sidebar { width: min(86vw, 340px) }
+  改滑出快慢 → 同一段里的 transition，速度用的是 --dur
+  改遮罩深浅 → :root 里的 --overlay
+
+手机上顶栏是一行：☰ + 主页 / 文章 / 动态 / 推荐 + 搜索。
+（原来那个「标签」按钮和 RSS 图标删掉之后，这几个刚好排得下。）
+
+两个相关的坑：
+
+  .topbar__spacer 那个会自动伸长的占位块在窄屏不能用 ——
+  它会顺手把「搜索」挤出可视区。所以 640px 以下藏掉它，
+  改成给 .search-trigger 加 margin-left: auto 来靠右。
+
+  .topnav 在 900px 以下设了 flex: none。不设的话，万一一行放不下，
+  它会被 flex 压扁成一列、图标歪成一堆，而不是整块换行。
 
 
 ====================================================================

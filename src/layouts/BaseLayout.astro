@@ -31,13 +31,14 @@ const stats = buildStats(posts);
 const path = Astro.url.pathname;
 const isActive = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
 
-/* 顶部主导航：主页 / 文章 / 动态 / 推荐 / 标签 */
+/* 顶部主导航：主页 / 文章 / 动态 / 推荐。
+   标签的入口不在这里 —— 全部标签在搜索弹窗里（点搜索展开），
+   标签总览页 /tags/ 的入口在页脚的「全部标签」文字链接。 */
 const navIcons = {
   home: 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z',
   post: 'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m-5 14H7v-2h7zm3-4H7v-2h10zm0-4H7V7h10z',
   thought: 'M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z',
   pick: 'M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z',
-  tag: 'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4a2 2 0 0 0-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7A1.5 1.5 0 1 1 7 5.5 1.5 1.5 0 0 1 5.5 7z',
 } as const;
 
 const navItems = [
@@ -45,7 +46,6 @@ const navItems = [
   { href: '/posts/', label: '文章', icon: navIcons.post },
   { href: '/thoughts/', label: '动态', icon: navIcons.thought },
   { href: '/recommend/', label: '推荐', icon: navIcons.pick },
-  { href: '/tags/', label: '标签', icon: navIcons.tag },
 ];
 ---
 
@@ -82,6 +82,23 @@ const navItems = [
     <div class="app">
       <!-- 顶栏：横跨整页宽度，滚动时吸附在顶部 -->
       <div class="topbar">
+        <!--
+          窄屏（≤900px）才显示：把左侧边栏收成一个抽屉，点这里开。
+          宽屏下侧边栏是常驻的一列，这个按钮 display: none。
+          状态由页面底部的脚本维护（aria-expanded / body.drawer-open）。
+        -->
+        <button
+          class="icon-btn sidebar-toggle"
+          type="button"
+          aria-label="打开侧边栏"
+          aria-expanded="false"
+          aria-controls="sidebar"
+        >
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z" />
+          </svg>
+        </button>
+
         <nav class="topnav" aria-label="主导航">
           {
             navItems.map((item) => (
@@ -102,13 +119,11 @@ const navItems = [
 
         <span class="topbar__spacer"></span>
 
+        <!--
+          RSS 入口在页脚（右下角那个「RSS」文字链接），
+          顶栏不再放图标按钮。
+        -->
         <SearchDialog client:load items={searchIndex} />
-
-        <a class="icon-btn" href="/rss.xml" title="RSS 订阅" aria-label="RSS 订阅">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-            <path d="M5.5 18.5a2 2 0 1 1-2-2 2 2 0 0 1 2 2zM3.5 10.4v3a7.1 7.1 0 0 1 7.1 7.1h3a10.1 10.1 0 0 0-10.1-10.1zM3.5 3.5v3A13.5 13.5 0 0 1 17 20h3A16.5 16.5 0 0 0 3.5 3.5z" />
-          </svg>
-        </a>
       </div>
 
       <!--
@@ -137,5 +152,80 @@ const navItems = [
         </footer>
       </main>
     </div>
+
+    <!-- 窄屏抽屉打开时的遮罩：点它关闭侧边栏。只在 body.drawer-open 时可见 -->
+    <div class="sidebar-scrim" aria-hidden="true"></div>
+
+    <script is:inline>
+      /*
+       * 窄屏下把左侧边栏变成抽屉。
+       * 宽屏（> 900px）时侧边栏本来就在，这个脚本什么也不做。
+       *
+       * 抽屉关着的时候给它加 inert：元素虽然被移出画面（visibility: hidden
+       * 已经不参与 Tab 了），再叠一层 inert 更保险。宽屏下绝对不能加，
+       * 否则整条侧边栏会被当成不可交互。
+       */
+      (function () {
+        var btn = document.querySelector('.sidebar-toggle');
+        var panel = document.getElementById('sidebar');
+        var scrim = document.querySelector('.sidebar-scrim');
+        if (!btn || !panel || !scrim) return;
+
+        // 这个断点要和 global.css 里那个保持一致
+        var narrow = window.matchMedia('(max-width: 900px)');
+        var open = false;
+
+        function apply() {
+          var isDrawer = narrow.matches;
+          var shown = isDrawer && open;
+
+          document.body.classList.toggle('drawer-open', shown);
+          btn.setAttribute('aria-expanded', String(shown));
+          btn.setAttribute('aria-label', shown ? '关闭侧边栏' : '打开侧边栏');
+          panel.inert = isDrawer && !open;
+
+          // 抽屉开着时锁住页面滚动，不然底下的正文会跟着一起滑
+          document.body.style.overflow = shown ? 'hidden' : '';
+        }
+
+        function set(next) {
+          if (next === open) return;
+          open = next;
+          apply();
+        }
+
+        btn.addEventListener('click', function () {
+          set(!open);
+        });
+
+        scrim.addEventListener('click', function () {
+          set(false);
+        });
+
+        // 抽屉里的关闭按钮（宽屏下它是隐藏的）
+        var closeBtn = panel.querySelector('[data-sidebar-close]');
+        if (closeBtn) {
+          closeBtn.addEventListener('click', function () {
+            set(false);
+          });
+        }
+
+        // Esc 关闭，并把焦点还给开关按钮（否则焦点会停在看不见的地方）
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && open) {
+            set(false);
+            btn.focus();
+          }
+        });
+
+        // 拖窗口跨过断点时直接复位，免得状态卡住
+        narrow.addEventListener('change', function () {
+          set(false);
+          apply();
+        });
+
+        apply();
+      })();
+    </script>
   </body>
 </html>

@@ -103,14 +103,18 @@ export default function SearchDialog({ items, recentLimit = 12 }: Props) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
 
-  const topTags = useMemo(() => {
+  /*
+   * 搜索面板里列出【全部】标签（以前只列前 8 个）。
+   * 顶栏那个「标签」按钮已删掉，所以这里得能盖住所有标签。
+   * 排序：出现次数多的在前，次数相同按名字排。
+   */
+  const allTags = useMemo(() => {
     const map = new Map<string, number>();
     for (const item of items) {
       for (const tag of item.tags) map.set(tag, (map.get(tag) ?? 0) + 1);
     }
     return [...map.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh'))
       .map(([tag]) => tag);
   }, [items]);
 
@@ -245,19 +249,30 @@ export default function SearchDialog({ items, recentLimit = 12 }: Props) {
                   {label}
                 </button>
               ))}
-
-              {topTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className="chip"
-                  aria-pressed={query.trim() === tag}
-                  onClick={() => setQuery(query.trim() === tag ? '' : tag)}
-                >
-                  #{tag}
-                </button>
-              ))}
             </div>
+
+            {/*
+              全部标签：点一下就填进搜索框（再点一下取消）。
+              标签可能很多，所以这块在 CSS 里限高 + 自己滚。
+            */}
+            {allTags.length > 0 && (
+              <div className="search-panel__tags">
+                <span className="search-panel__tags-label">全部标签</span>
+                <div className="search-panel__tags-list">
+                  {allTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className="chip"
+                      aria-pressed={query.trim() === tag}
+                      onClick={() => setQuery(query.trim() === tag ? '' : tag)}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {results.length === 0 ? (
               <p className="search-panel__empty">
